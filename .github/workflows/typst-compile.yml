@@ -1,17 +1,17 @@
 name: Build Typst document
 on: [push]
 jobs:
-  build_typst:
+  build_typst_documents:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - uses:  Jarivanbakel/typst-action@v3
+      - name: Compile Typst Files
+        uses: lvignoli/typst-action@main
         with:
-          input_files: main.typ
-          working_directory: typst_report
+          source_file: typst_report/main.typ
       - name: Upload PDF file
         uses: actions/upload-artifact@v4
         with:
           name: PDF
-          path: main.pdf
+          path: typst_report/main.pdf
