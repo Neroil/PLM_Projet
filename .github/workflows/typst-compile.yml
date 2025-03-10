@@ -4,7 +4,7 @@ on:
     branches:
       - main
     paths-ignore:
-      - 'typst_report/main.pdf'
+      - 'report.pdf'
   workflow_dispatch:
 
 permissions:
@@ -21,13 +21,13 @@ jobs:
         uses: typst-community/setup-typst@v4.0.2
 
       - name: Compile Typst Document
-        run: typst compile typst_report/main.typ typst_report/main.pdf
+        run: typst compile typst_report/main.typ report.pdf
 
       - name: Commit and Push PDF
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add typst_report/main.pdf
+          git add report.pdf
           git commit -m 'Add compiled Typst document'
           git push
         env:
