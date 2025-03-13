@@ -18,6 +18,16 @@
 
 This is a simple template that can be used for a report.
 
+= Recherches effectuées 
+
+Cette rubrique est pour l'instant temporaire, mais nous permet de nous mettre à jour sur ce que nous avons fait lors des jours. A refactor plus tard de façon plus propre 
+
+== 13-03-25
+
+Recherche sur l'initalisation de projets phoenix, notamment en utilisant cettre ressource ci : https://hexdocs.pm/phoenix/up_and_running.html
+
+Deplus on a pu trouver un site qui permet de faire des exercices liés à Elixir ici un lien sur la section de la concurrence : https://elixirschool.com/en/lessons/advanced/otp_concurrency
+
 = Features
 == Colorful items
 
