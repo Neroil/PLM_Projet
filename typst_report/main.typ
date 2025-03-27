@@ -29,7 +29,7 @@
   year: "2025",
   class: "ICSL",
   main-color: "A63A8F", //set the main color
-  logo: image("logo.png"), //set the logo
+  logo: image("media/logo.png"), //set the logo
 ) 
 
 #outline(
@@ -62,7 +62,6 @@ La programmation concurrente est donc une façon de programmer en tenant compte 
 Ce paradigme introduit des concepts spécifiques comme la synchronisation, les verrous, les sémaphores, les variables atomiques, et les files de messages, qui permettent de coordonner l'exécution des différents processus ou threads et d'éviter les problèmes classiques de concurrence comme les race conditions, les deadlocks ou les famines.
 
 
-
 = Paradigme fonctionnel
 
 Outre le paradigme de concurrence, il nous semblait important de pour une fois effectuer un projet en entier en utilisant un language fonctionnel. Dans le cadre de notre cours de "Paradigme et Language de Programmation", on a pu se mouiller les mains avec Haskell, mais outre les mini programmes que nous avions pu réaliser, nous n'avions jamais fait de "grand" projet du début à la fin en utilisant un language fonctionnel. 
@@ -75,8 +74,29 @@ Elixir tourne sur la machine virtuelle d'Erlang qui est nommée BEAM.
 
 == Qu'est ce que c'est BEAM ?
 
-BEAM, 
+BEAM, qui veut dire en français "La machine abstraite Erlang de Bogdan" est la machine virtuelle qui exécute le bytecode compilé des programmes Erlang et Elixir. 
 
+Vu que cette machine virtuelle a été développé pour l'ecosytème Erlang/OTP (Open Telecom Platform), elle est spécialement concue pour répondre aux exigences liées à la télécommunication, la haute disponibilité, la tolérance aux pannes et la concurrence. 
+
+*Voici ses charactéristiques :*
+
+=== Gestion avancée de la concurrence
+BEAM exécute des processus légers qui ne partagent pas de mémoire. Ces processus communiquent uniquement via un passage de *messages asynchrone*, ce qui permet d'éviter les problèmes courants liés aux accès concurrents comme les conditions de course et les verrous. Cette isolation entre les processus est la base de la tolérance aux pannes : si l'un des processus échoue, il n'impactera pas les autres.
+
+=== Planificateurs multicœurs efficaces
+Initialement, BEAM utilisait une seule file d'attente d'exécution (run queue). Aujourd'hui, elle attribue une file d'attente à chaque cœur de processeur disponible, ce qui permet de paralléliser les programmes de manière optimale dynamiquement selon le nombre de coeurs de la machine.
+#figure(
+  image("media/1-Erlang-Virtual-Machine-the-BEAM-Google-Docs-1024x775.png", width: 60%),
+  caption: [
+    Files d'executions sur chaque coeur.
+  ],
+)
+
+=== Tolérance aux pannes grâce à la gestion des erreurs
+Contrairement a un language comme Java ou l'erreur est fatale, Erlang pronne la philosophie du "let it crash". Comme dit précédemment, cela signifie que les processus sont conçus pour échouer de manière isolée et sans impact sur le reste du système. Lorsqu'un processus rencontre une erreur, il peut simplement se planter sans essayer de corriger l'exception, tandis qu'un autre processus, souvent supervisé par un superviseur OTP, prendra en charge sa relance.
+
+=== Collecte de déchets par processus
+BEAM utilise une gestion automatisée de la mémoire avec un système de garbage collection par processus, ce qui permet de maintenir des temps de réponse constants (de l'ordre de la milliseconde), sans impact négatif sur la performance globale.
 
 
 
@@ -99,10 +119,18 @@ Début du rapport intermédiaire !
 = Bibliographie
 
 https://www.erlang-solutions.com/blog/comparing-elixir-vs-java/
+
 https://medium.com/flatiron-labs/elixir-and-the-beam-how-concurrency-really-works-3cc151cddd61
 == BEAM 
 https://en.wikipedia.org/wiki/BEAM_(Erlang_virtual_machine)
+
 https://www.erlang.org/blog/a-brief-beam-primer/
+
+https://www.erlang.org/blog/beam-compiler-history/
+
+https://www.erlang-solutions.com/blog/the-beam-erlangs-virtual-machine/
+
+https://elixirschool.com/en/lessons/advanced/otp_supervisors
 
 = Feature
 
