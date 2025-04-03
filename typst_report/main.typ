@@ -106,8 +106,73 @@ En parlant de BEAM, on a pu parler de l'utilisation de processus légers, mais q
 = La concurrence dans Elixir
 
 == Les outils de base
-En elixir, il est assez simple de créer un nouveau processus.
+=== Les processus
+En elixir, il est assez simple de créer un nouveau processus. Pour cela, il faut appeler la méthode `spawn` qui prend en paramètre un fonction à exécuter et qui retourne son pid (Processus ID).
 
+```ex
+pid = spawn(fn -> 1 + 2 end)
+```
+
+Cela crée un processus indépendant, c'est à dire que si celui-ci crash, le processus l'ayant créé (son parent) continuera sans s'en soucier. Il est donc également aussi de créer un processus lié à un autre un appelant la méthode `spawn_link`. Cela aura pour conséquence que si un processus crash, le signal de terminaison sera transmis à son parent.
+
+=== Les messages
+Afin de pouvoir communiquer entre les processus, il est possible d'envoyer et de recevoir des messages. La méthode `send(dest, msg)` permet d'envoyer un message, où `dest` est la destination du message (celui-ci peut être un pid local ou distant, un port local, ou autre ...) et `msg` le contenu du message. Cette méthode est non bloquante. Le message est ajouté à la "boîte aux lettres" (mailbox) du processus. Ces messages peuvent être récupérés via la construction `receive`. Celle-ci permet de récupéré un message selon un pattern ou d'attendre qu'un message arrive.
+
+```ex
+pid = spawn(fn -> 
+  receive do
+    {:hello, msg} -> msg
+    {:world, _msg} -> "Not a match"
+  after
+    1_000 -> "Timeout"
+  end
+end)
+
+send(pid, {:hello, "World"})
+```
+
+Comme `receive` est bloquant, il est possible de définir un timeout grâce au mot-clé `after`.
+
+== Open Telecom Platform (OTP) 
+OTP est un ensemble d'outils permettant de simplifier la création de système distribué. A l'origine développé pour le langage Erlang, les bibliothèques d'OTP sont également disponible en Elixir.
+
+== GenServer
+Les GenServer (Generic Server) sont une abstraction qui permettent à un processus de pouvoir gérer un état interne et à des processus externe de communiquer avec lui via des messages synchrones ou asynchrones. Les messages sysnchrones signifient que l'envoyeur attend la réponse alors les messages asynchrones n'attendent pas de réponse. Cette abstraction va implémenter toutes la logique de l'écoute de message et de gestion de l'état, laissant au développeur la seul résponsabilité d'implémenter les callbacks nécessaire. Voici un exemple de GenServer implémentant une stack:
+
+#figure(caption: [Exemple de GenServer #footnote[https://hexdocs.pm/elixir/GenServer.html]],
+```ex
+defmodule Stack do
+  use GenServer
+
+  # Callbacks
+
+  @impl true
+  def init(elements) do
+    initial_state = String.split(elements, ",", trim: true)
+    {:ok, initial_state}
+  end
+
+  @impl true
+  def handle_call(:pop, _from, state) do
+    [to_caller | new_state] = state
+    {:reply, to_caller, new_state}
+  end
+
+  @impl true
+  def handle_cast({:push, element}, state) do
+    new_state = [element | state]
+    {:noreply, new_state}
+  end
+end
+```
+)
+
+On peut voir dans l'exemple les trois principaux callbacks:
+- `init(init_args)` : Permet de définir le comportement du GenServer lors du démarrage du serveur.
+- `handle_call(request, from, state)` : Permet de gérer un appel synchrone. Il est possible d'en définir plusieurs pour des `request` différentes. `state` correspond à l'état interne maintenu par le serveur. La valeur retournée à l'appelant est la valeur de `to_caller` et le nouvelle état qui sera transmis au prochain callback est `new_state`.
+- `handle_cast(request, state)` : Comme `handle_call` mais pour les appels asynchrones. La principal différence est que le résultat est un `:noreply`, c'est-à-dire qu'aucune valeur n'est retournée à l'appelant.
+
+Il 
 
 = Cahier des charges prévisionnel
 
@@ -132,6 +197,10 @@ https://www.erlang-solutions.com/blog/comparing-elixir-vs-java/
 https://medium.com/flatiron-labs/elixir-and-the-beam-how-concurrency-really-works-3cc151cddd61
 
 https://medium.com/@ck3g/introduction-to-otp-genservers-and-supervisors-cf1358d545
+
+https://hexdocs.pm/elixir/processes.html
+
+https://elixirschool.com/en/lessons/advanced/otp_concurrency
 
 == BEAM 
 https://en.wikipedia.org/wiki/BEAM_(Erlang_virtual_machine)
