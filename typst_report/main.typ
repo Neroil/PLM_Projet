@@ -17,6 +17,11 @@
   it
 }
 
+#show raw.where(block: true): it => {
+  set text(size: 0.8em)
+  it
+}
+
 #show selector(heading.where(level: 2)) : set heading(numbering: none)
 
 //Theme instantiation
