@@ -128,7 +128,7 @@ Malgré ces limitations, les processus légers restent l'une des principales for
 
 == Les outils de base
 === Les processus
-En elixir, il est assez simple de créer un nouveau processus. Pour cela, il faut appeler la méthode `spawn` qui prend en paramètre un fonction à exécuter et qui retourne son pid (Processus ID).
+En elixir, il est assez simple de créer un nouveau processus. Pour cela, il faut appeler la méthode `spawn` qui prend en paramètre une fonction à exécuter et qui retourne son pid (Processus ID).
 
 ```ex
 pid = spawn(fn -> 1 + 2 end)
@@ -165,7 +165,7 @@ Un des concepts clé de la gestion de panne dans OTP est l'arbre de supervision.
 Cela permet de gérer aisément les erreurs des processus en définissant des politiques de redémarrage lorsqu'un des enfant d'un supervisor crash (plus de détail dans Supervisor). Les enfants des supervisors peuvent être des workers mais également un autre supervisor, permettant ainsi de créer une hiéarchie en arbre.
 
 === GenServer
-Les GenServer (Generic Server) sont une abstraction qui permettent à un processus de pouvoir gérer un état interne et à des processus externe de communiquer avec lui via des messages synchrones ou asynchrones. Les messages sysnchrones signifient que l'envoyeur attend la réponse alors les messages asynchrones n'attendent pas de réponse. Cette abstraction va implémenter toutes la logique de l'écoute de message et de gestion de l'état, laissant au développeur la seul résponsabilité d'implémenter les callbacks nécessaire. Voici un exemple de GenServer implémentant une stack:
+GenServer (Generic Server) est une abstraction faisant partie de la famille des workers. Celle-ci permet à un processus de pouvoir gérer un état interne et à des processus externe de communiquer avec lui via des messages synchrones ou asynchrones. Les messages sysnchrones signifient que l'envoyeur attend la réponse alors les messages asynchrones n'attendent pas de réponse. Cette abstraction va implémenter toutes la logique de l'écoute de message et de gestion de l'état, laissant au développeur la seul résponsabilité d'implémenter les callbacks nécessaire. Voici un exemple de GenServer implémentant une stack:
 
 #figure(caption: [Exemple de GenServer #footnote[https://hexdocs.pm/elixir/GenServer.html]],
 ```ex
@@ -201,6 +201,41 @@ On peut voir dans l'exemple les trois principaux callbacks:
 - `handle_cast(request, state)` : Comme `handle_call` mais pour les appels asynchrones. La principal différence est que le résultat est un `:noreply`, c'est-à-dire qu'aucune valeur n'est retournée à l'appelant.
 
 === Supervisor <supervisor>
+Le Supervisor est l'outils servant à gérer le cycle de vie des autres processus. Voici un simple exemple reprenant notre GenServer:
+
+```ex
+children = [
+      {Stack, "1,2,3"}
+    ]
+
+opts = [strategy: :one_for_one, name: Stack.Supervisor]
+Supervisor.start_link(children, opts)
+```
+
+*Description des éléments:*
+- children : Contient une liste avec les modules enfants qui seront superviser. Dans notre cas, c'est un tuple avec le nom du module (Stack qui est le GenServer de l'exemple précédent) ainsi que ces paramètres d'initilaisation. Il est aussi possible de spécifier uniquement le nom du module.
+- opts : C'est ici qu'on peut décrire les paramètres du supervisor. Il y a son nom ainsi que la stratégie de redémarrage des enfants. Il en existe 3
+  - :one_for_one : Redémarre seulement le processus qui a crash
+  - :one_for_all : Redémarre tous les processus quand un crash
+  - :rest_for_one : Redémarre le processus qui a crash et tous ceux qui ont démarrer après lui
+
+- Enfin, le supervisor est démarrer avec les enfants et les options en paramètre. A noté que seul l'option `strategy` est obligatoire. `name` est optionnel est il en existe également d'autre comme, le nombre de redémarrage, etc...
+
+Pour qu'un module puisse être passé au supervisor, il faut qu'il ait la fonction `child_spec` afin d'indiquer son comportement. Dans notre exemple, il n'est pas nécessaire de le faire car le GenServer le fait pour nous. Cependant, il est possible de directement passer une map contenant nos child_spec dans la liste d'enfant du supervisor.
+
+```ex
+children = [
+  %{
+      id: Stack,
+      start: {Stack, :start_link, "1,2,3"},
+      shutdown: 5_000,
+      restart: :permanent,
+      type: :worker
+    }
+]
+```
+
+
 
 = Cahier des charges prévisionnel
 
