@@ -234,7 +234,18 @@ children = [
     }
 ]
 ```
-
+*Description des éléments:*
+- id : Identifiant qui sera utilisé par le supervisor en interne pour identidfier le processus
+- start : Définit comment démarrer le processus, donc le nom du module, la fonction à appeler pour démarrer et les arguments
+- shutdown : Définit comment arrêter le processus. Il y a 3 valeurs possibles:
+  - N'importe quelle entier positif : Définit le temps en milliseconde que le supervisor laisse au processus pour s'arrêter. Si le processus est toujours vivant après, il est kill
+  - :brutal_kill : Kill le processus immédiatement
+  - :infinity : Attend jusqu'à ce que le processus s'arrête, sans timeout
+- restart : Définit comment redémarrer le processus. Il y a 3 politiques disponibles:
+  - :permanent : Le processus sera toujours redémarrer
+  - :temporary : Le processus n'est jamais redémarré, peut importe la startégie de supervision. Toutes terminaisons, même anormale, est considérée comme réussie.
+  - :transient : Le processus est redémarrer seulement s'il est terminer de manière anormale.
+- type : Définit le type du noeud dans l'arbre de supervision. Il peut être soit `:worker`, soit `:supervisor`
 
 
 = Cahier des charges prévisionnel
@@ -302,7 +313,7 @@ https://medium.com/@ck3g/introduction-to-otp-genservers-and-supervisors-cf1358d5
 
 https://medium.com/elemental-elixir/elixir-otp-basics-of-processes-d3437607d12b#:~:text=Elixir%20processes%20are%20similar%20to,internally%20by%20the%20Beam%20VM.
 
-https://hexdocs.pm/elixir/processes.html
+https://hexdocs.pm/elixir/
 
 https://elixirschool.com/en/lessons/advanced/otp_concurrency
 
