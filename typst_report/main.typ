@@ -150,10 +150,10 @@ En elixir, il est assez simple de créer un nouveau processus. Pour cela, il fau
 pid = spawn(fn -> 1 + 2 end)
 ```
 
-Cela crée un processus indépendant, c'est à dire que si celui-ci crash, le processus l'ayant créé (son parent) continuera sans s'en soucier. Il est donc également aussi de créer un processus lié à un autre un appelant la méthode `spawn_link`. Cela aura pour conséquence que si un processus crash, le signal de terminaison sera transmis à son parent.
+Cela crée un processus indépendant, c'est à dire que si celui-ci crash, le processus l'ayant créé (son parent) continuera sans s'en soucier. Il est donc également possible de créer un processus lié à un autre un appelant la méthode `spawn_link`. Cela aura pour conséquence que si un processus crash, le signal de terminaison sera transmis à son parent.
 
 === Les messages
-Afin de pouvoir communiquer entre les processus, il est possible d'envoyer et de recevoir des messages. La méthode `send(dest, msg)` permet d'envoyer un message, où `dest` est la destination du message (celui-ci peut être un pid local ou distant, un port local, ou autre ...) et `msg` le contenu du message. Cette méthode est non bloquante. Le message est ajouté à la "boîte aux lettres" (mailbox) du processus. Ces messages peuvent être récupérés via la construction `receive`. Celle-ci permet de récupéré un message selon un pattern ou d'attendre qu'un message arrive.
+Afin de pouvoir communiquer entre les processus, il est possible d'envoyer et de recevoir des messages. La méthode `send(dest, msg)` permet d'envoyer un message, où `dest` est la destination du message (celui-ci peut être un pid local ou distant, un port local, ou autre ...) et `msg` le contenu du message. Cette méthode est non bloquante. Le message est ajouté à la "boîte aux lettres" (mailbox) du processus. Ces messages peuvent être récupérés via la construction `receive`. Celle-ci permet de récupérer un message selon un pattern ou d'attendre qu'un message arrive.
 
 ```ex
 pid = spawn(fn -> 
@@ -181,7 +181,7 @@ Un des concepts clé de la gestion de panne dans OTP est l'arbre de supervision.
 Cela permet de gérer aisément les erreurs des processus en définissant des politiques de redémarrage lorsqu'un des enfant d'un supervisor crash (plus de détail dans Supervisor). Les enfants des supervisors peuvent être des workers mais également un autre supervisor, permettant ainsi de créer une hiéarchie en arbre.
 
 === GenServer
-GenServer (Generic Server) est une abstraction faisant partie de la famille des workers. Celle-ci permet à un processus de pouvoir gérer un état interne et à des processus externe de communiquer avec lui via des messages synchrones ou asynchrones. Les messages sysnchrones signifient que l'envoyeur attend la réponse alors les messages asynchrones n'attendent pas de réponse. Cette abstraction va implémenter toutes la logique de l'écoute de message et de gestion de l'état, laissant au développeur la seul résponsabilité d'implémenter les callbacks nécessaire. Voici un exemple de GenServer implémentant une stack:
+GenServer (Generic Server) est une abstraction faisant partie de la famille des workers. Celle-ci permet à un processus de pouvoir gérer un état interne et à des processus externe de communiquer avec lui via des messages synchrones ou asynchrones. Les messages sysnchrones signifient que l'envoyeur attend la réponse alors les messages asynchrones n'attendent pas de réponse. Cette abstraction va implémenter toute la logique de l'écoute de message et de gestion de l'état, laissant au développeur la seule résponsabilité d'implémenter les callbacks nécessaire. Voici un exemple de GenServer implémentant une stack:
 
 #figure(caption: [Exemple de GenServer #footnote[https://hexdocs.pm/elixir/GenServer.html]],
 ```ex
@@ -229,13 +229,13 @@ Supervisor.start_link(children, opts)
 ```
 
 *Description des éléments:*
-- children : Contient une liste avec les modules enfants qui seront superviser. Dans notre cas, c'est un tuple avec le nom du module (Stack qui est le GenServer de l'exemple précédent) ainsi que ces paramètres d'initilaisation. Il est aussi possible de spécifier uniquement le nom du module.
-- opts : C'est ici qu'on peut décrire les paramètres du supervisor. Il y a son nom ainsi que la stratégie de redémarrage des enfants. Il en existe 3
-  - :one_for_one : Redémarre seulement le processus qui a crash
-  - :one_for_all : Redémarre tous les processus quand un crash
-  - :rest_for_one : Redémarre le processus qui a crash et tous ceux qui ont démarrer après lui
+- *children :* Contient une liste avec les modules enfants qui seront supervisé. Dans notre cas, c'est un tuple avec le nom du module (Stack qui est le GenServer de l'exemple précédent) ainsi que ces paramètres d'initilaisation. Il est aussi possible de spécifier uniquement le nom du module.
+- *opts :* C'est ici qu'on peut décrire les paramètres du supervisor. Il y a son nom ainsi que la stratégie de redémarrage des enfants. Il en existe 3
+  - `:one_for_one` : Redémarre seulement le processus qui a crash
+  - `:one_for_all` : Redémarre tous les processus quand un crash
+  - `:rest_for_one` : Redémarre le processus qui a crash et tous ceux qui ont démarrer après lui
 
-- Enfin, le supervisor est démarrer avec les enfants et les options en paramètre. A noté que seul l'option `strategy` est obligatoire. `name` est optionnel est il en existe également d'autre comme, le nombre de redémarrage, etc...
+- Enfin, le supervisor est démarré avec les enfants et les options en paramètre. A noté que seul l'option `strategy` est obligatoire. `name` est optionnel est il en existe également d'autre comme, le nombre de redémarrage, etc...
 
 Pour qu'un module puisse être passé au supervisor, il faut qu'il ait la fonction `child_spec` afin d'indiquer son comportement. Dans notre exemple, il n'est pas nécessaire de le faire car le GenServer le fait pour nous. Cependant, il est possible de directement passer une map contenant nos child_spec dans la liste d'enfant du supervisor.
 
@@ -251,17 +251,17 @@ children = [
 ]
 ```
 *Description des éléments:*
-- id : Identifiant qui sera utilisé par le supervisor en interne pour identidfier le processus
-- start : Définit comment démarrer le processus, donc le nom du module, la fonction à appeler pour démarrer et les arguments
-- shutdown : Définit comment arrêter le processus. Il y a 3 valeurs possibles:
+- *id :* Identifiant qui sera utilisé par le supervisor en interne pour identidfier le processus
+- *start :* Définit comment démarrer le processus, donc le nom du module, la fonction à appeler pour démarrer et les arguments
+- *shutdown :* Définit comment arrêter le processus. Il y a 3 valeurs possibles:
   - N'importe quelle entier positif : Définit le temps en milliseconde que le supervisor laisse au processus pour s'arrêter. Si le processus est toujours vivant après, il est kill
-  - :brutal_kill : Kill le processus immédiatement
-  - :infinity : Attend jusqu'à ce que le processus s'arrête, sans timeout
-- restart : Définit comment redémarrer le processus. Il y a 3 politiques disponibles:
-  - :permanent : Le processus sera toujours redémarrer
-  - :temporary : Le processus n'est jamais redémarré, peut importe la startégie de supervision. Toutes terminaisons, même anormale, est considérée comme réussie.
-  - :transient : Le processus est redémarrer seulement s'il est terminer de manière anormale.
-- type : Définit le type du noeud dans l'arbre de supervision. Il peut être soit `:worker`, soit `:supervisor`
+  - `:brutal_kill` : Kill le processus immédiatement
+  - `:infinity` : Attend jusqu'à ce que le processus s'arrête, sans timeout
+- *restart :* Définit comment redémarrer le processus. Il y a 3 politiques disponibles:
+  - `:permanent` : Le processus sera toujours redémarré
+  - `:temporary` : Le processus n'est jamais redémarré, peut importe la startégie de supervision. Toutes terminaisons, même anormale, est considérée comme réussie.
+  - `:transient` :  Le processus est redémarré seulement s'il est terminé de manière anormale.
+- *type :* Définit le type du noeud dans l'arbre de supervision. Il peut être soit `:worker`, soit `:supervisor`
 
 
 = Cahier des charges prévisionnel
@@ -300,6 +300,8 @@ Le but de ce jeu est de simuler cette gestion, chaque travailleur, vaisseau ou m
 == Technologies utilisées
 
 Le framework Phoenix, basé sur Elixir, sera utilisé pour développer le jeu. Ce choix garantit une gestion optimale de la concurrence et une scalabilité adaptée à un jeu en ligne.
+
+#pagebreak()
 
 = Bibliographie
 
