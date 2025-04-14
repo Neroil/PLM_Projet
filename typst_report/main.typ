@@ -2,18 +2,18 @@
 
 //Rules override
 #show outline.entry.where(level: 1): it => {
-  set text(size: 1.3em, weight: "bold")
+  set text(size: 1.1em, weight: "bold")
   set block(above: 1.2em, below: 0.8em)
   it
 }
 
 #show outline.entry.where(level: 2): it => {
-  set text(size: 1.1em)
+  set text(size: 0.9em)
   it
 }
 
 #show outline.entry.where(level: 3): it => {
-  set text(size: 0.9em)
+  set text(size: 0.8em)
   it
 }
 
@@ -57,13 +57,29 @@ La concurrence est devenue essentielle dans le développement de logiciels moder
 
 Donc il nous faut pouvoir utiliser ces cœurs maintenant si abondant pour pouvoir faire des applications efficace.
 
-La concurrence est aussi très importante lorsqu'on interagit avec des API web et d'autres machines. La communication n'est pour l'instant pas instantanée et il faut alors avoir un mécanisme d'attente qui ne fait pas arrêter le programme. Les opérations d'entrée/sortie (I/O), comme les requêtes réseau ou les accès disque, sont particulièrement concernées car elles comportent des temps d'attente réel.
+La concurrence est aussi très importante lorsqu'on interagit avec des API web et d'autres machines. La communication n'est pour l'instant pas instantanée et il faut alors avoir un mécanisme d'attente qui ne fait pas arrêter le programme. Les opérations d'entrée/sortie (I/O), comme les requêtes réseau ou les accès disque, sont particulièrement concernées car elles comportent des temps d'attente réel. 
+
+Pour exploiter efficacement le matériel moderne et gérer ces opérations non instantanées, il est indispensable d'adopter une approche de programmation adaptée : c'est le rôle du paradigme de concurrence.
 
 = Paradigme de concurrence
 
 La programmation concurrente est donc une façon de programmer en tenant compte de l'existence de ces threads et processus. Elle implique la conception de programmes où plusieurs séquences d'instructions peuvent s'exécuter simultanément ou en alternance rapide (préemption de plusieurs processus entre eux par exemple).
 
 Ce paradigme introduit des concepts spécifiques comme la synchronisation, les verrous, les sémaphores, les variables atomiques, et les files de messages, qui permettent de coordonner l'exécution des différents processus ou threads et d'éviter les problèmes classiques de concurrence comme les race conditions, les deadlocks ou les famines.
+
+Gérer ces problèmes complexes a conduit à l'apparition de langages et de bibliothèques conçus spécialement pour les applications concurrentes. Parmi ces solutions, Erlang occupe une place importante et influente dans l'histoire de la programmation concurrente, ayant plus tard donné naissance à Elixir.
+
+= Petit historique d'Erlang et Elixir
+
+== Erlang 
+
+Erlang (nom dérivé soit d'Ericsson Language, soit du mathématicien danois Agner Krarup Erlang) est né en 1986 dans les laboratoires d'Ericsson pour répondre aux défis croissants du monde des télécommunications. L'objectif était de créer un langage spécifiquement adapté à ces enjeux, capable de reproduire les propriétés des systèmes de commutation téléphonique. C'est de là que viennent ses caractéristiques distinctives : une haute concurrence et une tolérance aux pannes totale. Un système de commutation physique dans l'ère analogique de la téléphonie était par nature concurrent, il devait gérer de multiples appels simultanément. Il devait également être résilient, car une défaillance sur un appel ne devait en aucun cas compromettre les autres communications en cours ! 
+
+== Elixir 
+
+Elixir est un langage de programmation fonctionnel créé par José Valim en 2012, et dont la première version stable a été publiée en 2014. Le but de ce language était d'améliorer la syntaxe vieillissante d'Erlang (26 ans en 2012 !). Valim étant un contributeur du language Ruby On Rails, il a voulu ammener cette syntaxe et ces fonctionnalité aux outils de concurrence mis à disposition par Erlang/OTP(Open Telecom Platform). 
+
+Elixir a été conçu pour offrir tous les avantages d'Erlang tout en ajoutant des fonctionnalités modernes sans sacrifier la compatibilité avec l'écosystème Erlang/OTP existant.
 
 = Présentation de BEAM
 
@@ -73,7 +89,7 @@ Elixir tourne sur la machine virtuelle d'Erlang qui est nommée BEAM. Plus préc
 
 BEAM, qui veut dire en français "La machine abstraite Erlang de Bogdan" est la machine virtuelle qui exécute le bytecode compilé des programmes Erlang et Elixir. 
 
-Vu que cette machine virtuelle a été développé pour l'ecosytème Erlang/OTP (Open Telecom Platform), elle est spécialement conçue pour répondre aux exigences liées à la télécommunication, la haute disponibilité, la tolérance aux pannes et la concurrence. 
+Vu que cette machine virtuelle a été développé pour l'ecosytème Erlang/OTP, elle est spécialement conçue pour répondre aux exigences liées à la télécommunication, la haute disponibilité, la tolérance aux pannes et la concurrence. 
 
 *Voici ses caractéristiques :*
 
@@ -96,7 +112,7 @@ Contrairement à un language comme Java ou l'erreur est fatale si non traitée d
 
 Chaque processus dans BEAM possède son propre tas et sa propre pile, alloués dans un même bloc mémoire et croissant l'un vers l'autre. Lorsque la pile et le tas se rencontrent, le collecteur de déchets (garbage collector) est déclenché pour récupérer la mémoire inutilisée. Si la mémoire récupérée s'avère insuffisante, la taille du tas est augmentée pour répondre aux besoins croissants du processus.
 
-Cette approche, où chaque processus dispose de son propre collecteur de déchets, présente plusieurs avantages. Tout d'abord, elle permet d'isoler les pauses dues à la collecte de déchets à un seul processus, sans affecter les autres. Cela réduit considérablement les interruptions globales du système, améliorant ainsi la réactivité et la fluidité des applications.
+Cette approche, où chaque processus dispose de son propre collecteur de déchets, présente plusieurs avantages. Tout d'abord, elle permet d'isoler les pauses dues à la collecte de déchets à un seul processus, sans affecter les autres. Cela réduit les interruptions globales du système, améliorant ainsi la réactivité et la fluidité des applications.
 
 De plus, les pauses induites par la collecte de déchets sont généralement très courtes, car elles se limitent à la mémoire utilisée par un seul processus.
 
@@ -105,7 +121,7 @@ Cependant, il faut faire attention aux problèmes de duplication des information
 = Pourquoi Elixir est la solution ?
 
 == Paradigme fonctionnel
-Outre le paradigme de concurrence, il nous semblait important de pour une fois effectuer un projet en entier en utilisant un language fonctionnel. Dans le cadre de notre cours de "Paradigme et Language de Programmation", on a pu se mouiller les mains avec Haskell, mais outre les mini programmes que nous avions pu réaliser, nous n'avions jamais fait de "grand" projet du début à la fin en utilisant un language fonctionnel.
+Outre le paradigme de concurrence, il nous semblait important de, pour une fois, effectuer un projet en entier en utilisant un language fonctionnel. Dans le cadre de notre cours de "Paradigme et Language de Programmation", on a pu se mouiller les mains avec Haskell, mais outre les mini programmes que nous avions pu réaliser, nous n'avions jamais fait de "grand" projet du début à la fin en utilisant un language fonctionnel.
 
 Dans la programmation fonctionnelle, une variable est toujours immuable, il n'y a pas de système de reassignments de valeurs, donc certains problèmes liés à la synchronisation disparaissent. Pas tous par contre, notamment lors des problèmes de coordinations entre différentes entités.
 
@@ -285,24 +301,6 @@ Le but de ce jeu est de simuler cette gestion, chaque travailleur, vaisseau ou m
 
 Le framework Phoenix, basé sur Elixir, sera utilisé pour développer le jeu. Ce choix garantit une gestion optimale de la concurrence et une scalabilité adaptée à un jeu en ligne.
 
-
-
-
-
-= Recherches effectuées 
-
-Cette rubrique est pour l'instant temporaire, mais nous permet de nous mettre à jour sur ce que nous avons fait lors des jours. A refactor plus tard de façon plus propre 
-
-== 13-03-25
-
-Recherche sur l'initialisation de projets phoenix, notamment en utilisant cette ressource ci : https://hexdocs.pm/phoenix/up_and_running.html
-
-De plus, on a pu trouver un site qui permet de faire des exercices liés à Elixir ici un lien sur la section de la concurrence : https://elixirschool.com/en/lessons/advanced/otp_concurrency
-
-== 27-03-25
-
-Début du rapport intermédiaire ! 
-
 = Bibliographie
 
 https://www.erlang-solutions.com/blog/comparing-elixir-vs-java/
@@ -317,6 +315,14 @@ https://hexdocs.pm/elixir/
 
 https://elixirschool.com/en/lessons/advanced/otp_concurrency
 
+== Histoire Erlang / Elixir 
+
+https://thechipletter.substack.com/p/ericsson-to-whatsapp-the-story-of
+https://www.erlang-solutions.com/blog/twenty-years-of-open-source-erlang/
+https://elixir-lang.org/blog/2013/08/08/elixir-design-goals/
+https://ouidou.fr/2019/01/31/une-breve-histoire-delixir-et-erlang-otp
+
+
 == BEAM 
 https://en.wikipedia.org/wiki/BEAM_(Erlang_virtual_machine)
 
@@ -329,20 +335,3 @@ https://www.erlang-solutions.com/blog/the-beam-erlangs-virtual-machine/
 https://elixirschool.com/en/lessons/advanced/otp_supervisors
 
 https://www.erlang.org/doc/apps/erts/garbagecollection.html
-
-
-
-= Feature
-
-== Customized items
-
-
-Figures are customized but this is settable in the template file. You can of course reference them  : @ref.
-
-#figure(caption: [Code example],
-```rust
-fn main() {
-  println!("Hello Typst!");
-}
-```
-)<ref>
