@@ -181,7 +181,7 @@ Un des concepts clés de la gestion de panne dans OTP est l'arbre de supervision
 Cela permet de gérer aisément les erreurs des processus en définissant des politiques de redémarrage lorsqu'un des enfant d'un supervisor crash (plus de détail dans Supervisor). Les enfants des supervisors peuvent être des workers mais également un autre supervisor, permettant ainsi de créer une hiérarchie en arbre.
 
 === Agent
-Les Agents permettent une gestion simple d'un état partagé. En plus, la concurrence est directement géré par le module, il est donc possible d'accéder et de modifier la valeur de l'Agent depuis plusieurs processus de manière concurrente. Voici un exemple #footnote[https://hexdocs.pm/elixir/Agent.html] d'Agent implémentant un compteur:
+Les Agents permettent une gestion simple d'un état partagé. En plus, la concurrence est directement gérée par le module, il est donc possible d'accéder et de modifier la valeur de l'Agent depuis plusieurs processus de manière concurrente. Voici un exemple #footnote[https://hexdocs.pm/elixir/Agent.html] d'Agent implémentant un compteur:
 
 ```ex
 defmodule Counter do
@@ -200,10 +200,10 @@ defmodule Counter do
   end
 end
 ```
-Les Agents définissent simplement deux fonctions, `get` qui permet de passer une fonction à l'agent qui prend en paramètre l'état actuel et dont le résultat sera retourné à l'appelant. Et la fonction `update` qui est similaire à `get` sauf que le résultat n'est pas retourné, mais utilisé comme nouvelle valeur de l'état interne. A noter également que lors du démarrage de l'agent, la macro `__MODULE__` est donné comme nom pour l'Agent. Cette macro retourne le nom du module et permet donc de s'adapter si le nom que l'on veut donner au module change, sans devoir nous même le modifier partout dans le code (le premier paramètre des fonctions `get` et `update` est également le nom que l'on a passé lors du lancement de l'agent).
+Les Agents définissent simplement deux fonctions, `get` qui permet de passer une fonction à l'agent qui prend en paramètre l'état actuel et dont le résultat sera retourné à l'appelant. Et la fonction `update` qui est similaire à `get` sauf que le résultat n'est pas retourné, mais utilisé comme nouvelle valeur de l'état interne. À noter également que, lors du démarrage de l'agent, la macro `__MODULE__` est donnée comme nom pour l'Agent. Cette macro retourne le nom du module et permet donc de s'adapter si le nom que l'on veut donner au module change, sans devoir nous-mêmes le modifier partout dans le code (le premier paramètre des fonctions `get` et `update` est également le nom que l'on a passé lors du lancement de l'agent).
 
 === GenServer
-GenServer (Generic Server) est une abstraction faisant partie de la famille des workers. Celle-ci permet à un processus de pouvoir gérer un état interne et à des processus externe de communiquer avec lui via des messages synchrones ou asynchrones. Les messages sysnchrones signifient que l'envoyeur attend la réponse alors les messages asynchrones n'attendent pas de réponse. Cette abstraction va implémenter toute la logique de l'écoute de message et de gestion de l'état, laissant au développeur la seule résponsabilité d'implémenter les callbacks nécessaire. Voici un exemple #footnote[https://hexdocs.pm/elixir/GenServer.html] de GenServer implémentant une stack:
+GenServer (Generic Server) est une abstraction faisant partie de la famille des workers. Celle-ci permet à un processus de pouvoir gérer un état interne et à des processus externes de communiquer avec lui via des messages synchrones ou asynchrones. Les messages synchrones signifient que l'envoyeur attend la réponse, alors les messages asynchrones n'attendent pas de réponse. Cette abstraction va implémenter toute la logique de l'écoute de message et de gestion de l'état, laissant au développeur la seule responsabilité d'implémenter les callbacks nécessaires. Voici un exemple #footnote[https://hexdocs.pm/elixir/GenServer.html] de GenServer implémentant une stack:
 
 ```ex
 defmodule Stack do
@@ -265,7 +265,7 @@ On peut voir dans l'exemple les trois principaux callbacks:
 - `handle_cast(request, state)` : Comme `handle_call` mais pour les appels asynchrones. La principale différence est que le résultat est un `:noreply`, c'est-à-dire qu'aucune valeur n'est retournée à l'appelant.
 
 === Supervisor <supervisor>
-Le Supervisor est l'outils servant à gérer le cycle de vie des autres processus. Voici un simple exemple reprenant notre GenServer:
+Le Supervisor est l'outil servant à gérer le cycle de vie des autres processus. Voici un simple exemple reprenant notre GenServer:
 
 ```ex
 children = [
