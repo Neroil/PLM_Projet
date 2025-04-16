@@ -311,6 +311,22 @@ children = [
   - `:transient` :  Le processus est redémarré seulement s'il est terminé de manière anormale.
 - *type :* Définit le type du noeud dans l'arbre de supervision. Il peut être soit `:worker`, soit `:supervisor`
 
+=== DynamicSupervisor
+Le DynamicSupervisor, contrairement au Supervisor simple, permet de démarrer et de stopper de manière dynamique ses processus enfants. Il est typiquement démarrer par un Supervisor sans enfant, pour ensuite les ajouter de manière dynamique. L'unique startégie possible pour un DynamicSupervisor est `:one_for_one` comme la gestion est dynamique. Voici un exemple #footnote[https://hexdocs.pm/elixir/DynamicSupervisor.html]:
+```ex
+children = [
+  {DynamicSupervisor, name: MyApp.DynamicSupervisor, strategy: :one_for_one}
+]
+
+Supervisor.start_link(children, strategy: :one_for_one)
+
+{:ok, stack1} = DynamicSupervisor.start_child(MyApp.DynamicSupervisor, {Stack, "1,2,3"})
+
+{:ok, stack2} = DynamicSupervisor.start_child(MyApp.DynamicSupervisor, {Stack, "4,5,6"})
+
+DynamiqcSupervisor.terminate_child(MyApp.DynamicSupervisor, stack1)
+
+```
 
 = Cahier des charges prévisionnel
 
