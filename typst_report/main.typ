@@ -180,9 +180,6 @@ Un des concepts clés de la gestion de panne dans OTP est l'arbre de supervision
 
 Cela permet de gérer aisément les erreurs des processus en définissant des politiques de redémarrage lorsqu'un des enfant d'un supervisor crash (plus de détail dans Supervisor). Les enfants des supervisors peuvent être des workers mais également un autre supervisor, permettant ainsi de créer une hiérarchie en arbre.
 
-=== GenServer
-GenServer (Generic Server) est une abstraction faisant partie de la famille des workers. Celle-ci permet à un processus de pouvoir gérer un état interne et à des processus externes de communiquer avec lui via des messages synchrones ou asynchrones. Les messages synchrones signifient que l'envoyeur attend la réponse, alors les messages asynchrones n'attendent pas de réponse. Cette abstraction va implémenter toute la logique de l'écoute de message et de gestion de l'état, laissant au développeur la seule responsabilité d'implémenter les callbacks nécessaires. Voici un exemple de GenServer implémentant une stack:
-=======
 === Agent
 Les Agents permettent une gestion simple d'un état partagé. En plus, la concurrence est directement géré par le module, il est donc possible d'accéder et de modifier la valeur de l'Agent depuis plusieurs processus de manière concurrente. Voici un exemple #footnote[https://hexdocs.pm/elixir/Agent.html] d'Agent implémentant un compteur:
 
@@ -207,7 +204,6 @@ Les Agents définissent simplement deux fonctions, `get` qui permet de passer un
 
 === GenServer
 GenServer (Generic Server) est une abstraction faisant partie de la famille des workers. Celle-ci permet à un processus de pouvoir gérer un état interne et à des processus externe de communiquer avec lui via des messages synchrones ou asynchrones. Les messages sysnchrones signifient que l'envoyeur attend la réponse alors les messages asynchrones n'attendent pas de réponse. Cette abstraction va implémenter toute la logique de l'écoute de message et de gestion de l'état, laissant au développeur la seule résponsabilité d'implémenter les callbacks nécessaire. Voici un exemple #footnote[https://hexdocs.pm/elixir/GenServer.html] de GenServer implémentant une stack:
->>>>>>> 71dabf527c1f77d13d2b3b72c03343cc19f88de2
 
 ```ex
 defmodule Stack do
@@ -253,7 +249,7 @@ end
   def increment do
     Agent.update(__MODULE__, &(&1 + 1))
   end
-  end
+end
 
   @impl true
   def handle_cast({:push, element}, state) do
@@ -315,6 +311,22 @@ children = [
   - `:transient` :  Le processus est redémarré seulement s'il est terminé de manière anormale.
 - *type :* Définit le type du nœud dans l'arbre de supervision. Il peut être soit `:worker`, soit `:supervisor`
 
+=== DynamicSupervisor
+Le DynamicSupervisor, contrairement au Supervisor simple, permet de démarrer et de stopper de manière dynamique ses processus enfants. Il est typiquement démarrer par un Supervisor sans enfant, pour ensuite les ajouter de manière dynamique. L'unique startégie possible pour un DynamicSupervisor est `:one_for_one` comme la gestion est dynamique. Voici un exemple #footnote[https://hexdocs.pm/elixir/DynamicSupervisor.html]:
+```ex
+children = [
+  {DynamicSupervisor, name: MyApp.DynamicSupervisor, strategy: :one_for_one}
+]
+
+Supervisor.start_link(children, strategy: :one_for_one)
+
+{:ok, stack1} = DynamicSupervisor.start_child(MyApp.DynamicSupervisor, {Stack, "1,2,3"})
+
+{:ok, stack2} = DynamicSupervisor.start_child(MyApp.DynamicSupervisor, {Stack, "4,5,6"})
+
+DynamiqcSupervisor.terminate_child(MyApp.DynamicSupervisor, stack1)
+
+```
 
 = Cahier des charges prévisionnel
 
