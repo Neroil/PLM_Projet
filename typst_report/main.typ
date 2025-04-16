@@ -55,9 +55,9 @@ Un exemple simple serait d'avoir une application qui utilise un thread du CPU po
 
 La concurrence est devenue essentielle dans le développement de logiciels modernes. Les CPU actuels disposent d'un nombre croissant de cœurs, même dans le marché des processeurs abordables, par exemple, un processeur à moins de 100 francs offre déjà au moins 6 cœurs.
 
-Donc, il nous faut pouvoir utiliser ces cœurs maintenant si abondants pour pouvoir faire des applications efficaces.
+Donc, il nous faut pouvoir utiliser ces cœurs maintenant si abondants pour développer des applications efficaces.
 
-La concurrence est aussi très importante lorsqu'on interagit avec des API web et d'autres machines. La communication n'est pour l'instant pas instantanée et il faut alors avoir un mécanisme d'attente qui ne fait pas arrêter le programme. Les opérations d'entrée/sortie (I/O), comme les requêtes réseau ou les accès disque, sont particulièrement concernées, car elles comportent des temps d'attente réels. 
+La concurrence est aussi très importante lorsqu'on interagit avec des API web et d'autres machines. La communication n'est pour l'instant pas instantanée et il faut alors avoir un mécanisme d'attente qui ne fait pas arrêter le programme. Les opérations d'entrée/sortie (I/O), comme les requêtes réseau ou les accès disque, sont elle aussi particulièrement concernées, car elles comportent des temps d'attente réels. 
 
 Pour exploiter efficacement le matériel moderne et gérer ces opérations non instantanées, il est indispensable d'adopter une approche de programmation adaptée : c'est le rôle du paradigme de concurrence.
 
@@ -94,7 +94,7 @@ Vu que cette machine virtuelle a été développée pour l'écosystème Erlang/O
 *Voici ses caractéristiques :*
 
 === Gestion de la concurrence
-BEAM exécute des processus légers qui ne partagent pas de mémoire. Ces processus communiquent uniquement via un passage de *messages asynchrone*, ce qui permet d'éviter les problèmes courants liés aux accès concurrents, comme les conditions de course et les verrous. Cette isolation entre les processus est la base de la tolérance aux pannes : si l'un des processus échoue, il n'impactera pas les autres.
+BEAM exécute des processus légers qui ne partagent pas de mémoire. Ces processus communiquent uniquement via un passage de messages asynchrone, ce qui permet d'éviter les problèmes courants liés aux accès concurrents, comme les conditions de course et les verrous. Cette isolation entre les processus est la base de la tolérance aux pannes : si l'un des processus échoue, il n'impactera pas les autres.
 
 === Planificateurs multicœurs efficaces
 Initialement, BEAM utilisait une seule file d'attente d'exécution (run queue). Aujourd'hui, elle attribue une file d'attente à chaque cœur de processeur disponible, ce qui permet de paralléliser les programmes de manière optimale dynamiquement selon le nombre de cœurs de la machine.
@@ -139,7 +139,6 @@ De plus, bien que ces processus soient légers, ils ne sont pas gratuits en term
 
 Malgré ces limitations, les processus légers restent l'une des principales forces d'Elixir, offrant une solution puissante et flexible pour la gestion de la concurrence.
 
-
 = La concurrence dans Elixir
 
 == Les outils de base
@@ -154,7 +153,7 @@ Cela crée un processus indépendant, c'est-à-dire que, si celui-ci crash, le p
 
 === Les messages
 Afin de pouvoir communiquer entre les processus, il est possible d'envoyer et de recevoir des messages. La méthode `send(dest, msg)` permet d'envoyer un message, où `dest` est la destination du message (celui-ci peut être un pid local ou distant, un port local, ou autre ...) et `msg` le contenu du message. Cette méthode est non bloquante. Le message est ajouté à la "boîte aux lettres" (mailbox) du processus. Ces messages peuvent être récupérés via la construction `receive`. Celle-ci permet de récupérer un message selon un pattern ou d'attendre qu'un message arrive.
-
+#set align(center)
 ```ex
 pid = spawn(fn -> 
   receive do
@@ -167,6 +166,7 @@ end)
 
 send(pid, {:hello, "World"})
 ```
+#set align(left)
 
 Comme `receive` est bloquant, il est possible de définir un timeout grâce au mot-clé `after`.
 
@@ -181,8 +181,8 @@ Un des concepts clés de la gestion de panne dans OTP est l'arbre de supervision
 Cela permet de gérer aisément les erreurs des processus en définissant des politiques de redémarrage lorsqu'un des enfant d'un supervisor crash (plus de détail dans Supervisor). Les enfants des supervisors peuvent être des workers mais également un autre supervisor, permettant ainsi de créer une hiérarchie en arbre.
 
 === Agent
-Les Agents permettent une gestion simple d'un état partagé. En plus, la concurrence est directement gérée par le module, il est donc possible d'accéder et de modifier la valeur de l'Agent depuis plusieurs processus de manière concurrente. Voici un exemple #footnote[https://hexdocs.pm/elixir/Agent.html] d'Agent implémentant un compteur:
-
+Les Agents permettent une gestion simple d'un état partagé. En plus, la concurrence est directement gérée par le module, il est donc possible d'accéder et de modifier la valeur de l'Agent depuis plusieurs processus de manière concurrente. Voici un exemple d'Agent implémentant un compteur#footnote[https://hexdocs.pm/elixir/Agent.html]:
+#set align(center)
 ```ex
 defmodule Counter do
   use Agent
@@ -200,11 +200,14 @@ defmodule Counter do
   end
 end
 ```
-Les Agents définissent simplement deux fonctions, `get` qui permet de passer une fonction à l'agent qui prend en paramètre l'état actuel et dont le résultat sera retourné à l'appelant. Et la fonction `update` qui est similaire à `get` sauf que le résultat n'est pas retourné, mais utilisé comme nouvelle valeur de l'état interne. À noter également que, lors du démarrage de l'agent, la macro `__MODULE__` est donnée comme nom pour l'Agent. Cette macro retourne le nom du module et permet donc de s'adapter si le nom que l'on veut donner au module change, sans devoir nous-mêmes le modifier partout dans le code (le premier paramètre des fonctions `get` et `update` est également le nom que l'on a passé lors du lancement de l'agent).
+#set align(left)
+Les Agents définissent simplement deux fonctions, `get` qui permet de passer une fonction à l'agent qui prend en paramètre l'état actuel et dont le résultat sera retourné à l'appelant. Et la fonction `update` qui est similaire à `get` sauf que le résultat n'est pas retourné, mais utilisé comme nouvelle valeur de l'état interne.
+
+ À noter également que, lors du démarrage de l'agent, la macro `__MODULE__` est donnée comme nom pour l'Agent. Cette macro retourne le nom du module et permet donc de s'adapter si le nom que l'on veut donner au module change, sans devoir nous-mêmes le modifier partout dans le code (le premier paramètre des fonctions `get` et `update` est également le nom que l'on a passé lors du lancement de l'agent).
 
 === GenServer
-GenServer (Generic Server) est une abstraction faisant partie de la famille des workers. Celle-ci permet à un processus de pouvoir gérer un état interne et à des processus externes de communiquer avec lui via des messages synchrones ou asynchrones. Les messages synchrones signifient que l'envoyeur attend la réponse, alors les messages asynchrones n'attendent pas de réponse. Cette abstraction va implémenter toute la logique de l'écoute de message et de gestion de l'état, laissant au développeur la seule responsabilité d'implémenter les callbacks nécessaires. Voici un exemple #footnote[https://hexdocs.pm/elixir/GenServer.html] de GenServer implémentant une stack:
-
+GenServer (Generic Server) est une abstraction faisant partie de la famille des workers. Celle-ci permet à un processus de pouvoir gérer un état interne et à des processus externes de communiquer avec lui via des messages synchrones ou asynchrones. Les messages synchrones signifient que l'envoyeur attend la réponse, alors que les messages asynchrones n'attendent pas de réponse. Cette abstraction va implémenter toute la logique de l'écoute de message et de gestion de l'état, laissant au développeur la seule responsabilité d'implémenter les callbacks nécessaires. Voici un exemple de GenServer implémentant une stack#footnote[https://hexdocs.pm/elixir/GenServer.html]:
+#set align(center)
 ```ex
 defmodule Stack do
   use GenServer
@@ -258,7 +261,7 @@ end
   end
 end
 ```
-
+#set align(left)
 On peut voir dans l'exemple les trois principaux callbacks:
 - `init(init_args)` : Permets de définir le comportement du GenServer lors du démarrage du serveur.
 - `handle_call(request, from, state)` : Permets de gérer un appel synchrone. Il est possible d'en définir plusieurs pour des `request` différentes. `state` correspond à l'état interne maintenu par le serveur. La valeur retournée à l'appelant est la valeur de `to_caller` et le nouvel état qui sera transmis au prochain callback est `new_state`.
@@ -267,6 +270,7 @@ On peut voir dans l'exemple les trois principaux callbacks:
 === Supervisor <supervisor>
 Le Supervisor est l'outil servant à gérer le cycle de vie des autres processus. Voici un simple exemple reprenant notre GenServer:
 
+#set align(center)
 ```ex
 children = [
       {Stack, "1,2,3"}
@@ -275,10 +279,11 @@ children = [
 opts = [strategy: :one_for_one, name: Stack.Supervisor]
 Supervisor.start_link(children, opts)
 ```
+#set align(left)
 
 *Description des éléments:*
 - *children :* Contient une liste avec les modules enfants qui seront supervisés. Dans notre cas, c'est un tuple avec le nom du module (Stack qui est le GenServer de l'exemple précédent) ainsi que ces paramètres d'initialisation. Il est aussi possible de spécifier uniquement le nom du module.
-- *opts :* C'est ici qu'on peut décrire les paramètres du supervisor. Il y a son nom ainsi que la stratégie de redémarrage des enfants. Il en existe 3
+- *opts :* C'est ici qu'on peut décrire les paramètres du supervisor. Il y a son nom ainsi que la stratégie de redémarrage des enfants. Il en existe 3 :
   - `:one_for_one` : Redémarre seulement le processus qui a crash
   - `:one_for_all` : Redémarre tous les processus quand un crash
   - `:rest_for_one` : Redémarre le processus qui a crash et tous ceux qui ont démarré après lui
@@ -286,7 +291,7 @@ Supervisor.start_link(children, opts)
 - Enfin, le supervisor est démarré avec les enfants et les options en paramètre. À noter que seule l'option `strategy` est obligatoire. `name` est optionnel est il en existe également d'autre comme, le nombre de redémarrages, etc.
 
 Pour qu'un module puisse être passé au supervisor, il faut qu'il ait la fonction `child_spec` afin d'indiquer son comportement. Dans notre exemple, il n'est pas nécessaire de le faire, car le GenServer le fait pour nous. Cependant, il est possible de directement passer une map contenant nos child_spec dans la liste d'enfants du supervisor.
-
+#set align(center)
 ```ex
 children = [
   %{
@@ -298,6 +303,7 @@ children = [
     }
 ]
 ```
+#set align(left)
 *Description des éléments:*
 - *id :* Identifiant qui sera utilisé par le supervisor en interne pour identifier le processus
 - *start :* Définit comment démarrer le processus, donc le nom du module, la fonction à appeler pour démarrer et les arguments
@@ -313,6 +319,7 @@ children = [
 
 === DynamicSupervisor
 Le DynamicSupervisor, contrairement au Supervisor simple, permet de démarrer et de stopper de manière dynamique ses processus enfants. Il est typiquement démarrer par un Supervisor sans enfant, pour ensuite les ajouter de manière dynamique. L'unique startégie possible pour un DynamicSupervisor est `:one_for_one` comme la gestion est dynamique. Voici un exemple #footnote[https://hexdocs.pm/elixir/DynamicSupervisor.html]:
+#set align(center)
 ```ex
 children = [
   {DynamicSupervisor, name: MyApp.DynamicSupervisor, strategy: :one_for_one}
@@ -327,6 +334,7 @@ Supervisor.start_link(children, strategy: :one_for_one)
 DynamiqcSupervisor.terminate_child(MyApp.DynamicSupervisor, stack1)
 
 ```
+#set align(left)
 
 = Cahier des charges prévisionnel
 
@@ -365,7 +373,6 @@ Le but de ce jeu est de simuler cette gestion, chaque travailleur, vaisseau ou m
 
 Le framework Phoenix, basé sur Elixir, sera utilisé pour développer le jeu. Ce choix garantit une gestion optimale de la concurrence et une scalabilité adaptée à un jeu en ligne.
 
-#pagebreak()
 
 = Bibliographie
 
@@ -384,8 +391,11 @@ https://elixirschool.com/en/lessons/advanced/otp_concurrency
 == Histoire Erlang / Elixir 
 
 https://thechipletter.substack.com/p/ericsson-to-whatsapp-the-story-of
+
 https://www.erlang-solutions.com/blog/twenty-years-of-open-source-erlang/
+
 https://elixir-lang.org/blog/2013/08/08/elixir-design-goals/
+
 https://ouidou.fr/2019/01/31/une-breve-histoire-delixir-et-erlang-otp
 
 
@@ -402,5 +412,5 @@ https://elixirschool.com/en/lessons/advanced/otp_supervisors
 
 https://www.erlang.org/doc/apps/erts/garbagecollection.html
 
-
-Reformulation du texte à l'aide de différents LLMs (ChatGPT, Claude, Gemini).
+#set align(bottom)
+*Reformulation du texte à l'aide de différents LLMs (ChatGPT, Claude, Gemini).*
