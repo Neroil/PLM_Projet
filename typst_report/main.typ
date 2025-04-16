@@ -328,6 +328,8 @@ DynamiqcSupervisor.terminate_child(MyApp.DynamicSupervisor, stack1)
 
 ```
 
+Ces abstractions (GenServer, Supervisor, ...) fournissent une base solide pour construire des systèmes concurrents robustes avec Elixir. Pour compléter cette boîte à outils, OTP propose également d'autres comportements comme Registry ou Task, chacun étant conçu pour simplifier la gestion de scénarios concurrents spécifiques.
+
 = Cahier des charges prévisionnel
 
 == Nom du projet : Space Capitalism 
