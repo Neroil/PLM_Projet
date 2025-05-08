@@ -1,4 +1,4 @@
-defmodule ResourceSupervisor do
+defmodule RobotDynSupervisor do
   use DynamicSupervisor
 
   def start_link(planet) do
@@ -13,7 +13,7 @@ defmodule ResourceSupervisor do
   # Ajouter un worker dynamiquement
   def add_worker(planet, count) do
     resource = Planet.get_resource(planet)
-    
+
     for _ <- 1..count do
       DynamicSupervisor.start_child(planet, {Robot, {1000, resource}})
     end

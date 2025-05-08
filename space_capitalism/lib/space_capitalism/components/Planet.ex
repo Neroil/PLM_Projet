@@ -3,6 +3,7 @@ defmodule Planet do
 
   # Démarrer un Planet avec un nom et une ressource initiale
   def start_link({name, resource}) do
+    DynamicSupervisor.start_link(Robo)
     GenServer.start_link(__MODULE__, resource, name: name)
   end
 
@@ -14,7 +15,7 @@ defmodule Planet do
 
   # Obtenir l'état du Planet
   def get_resource(name) do
-    GenServer.call(via_tuple(name), :get_resource)
+    GenServer.call(name, :get_resource)
   end
 
   @impl true
