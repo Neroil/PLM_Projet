@@ -21,6 +21,7 @@ defmodule Planet do
 
   # Ajoute count Robot à la Planet
   def add_robot(name, count) do
+    IO.puts("Adding robots to #{name}")
     GenServer.cast(name, {:add_robot, count})
   end
 
@@ -31,6 +32,7 @@ defmodule Planet do
 
   @impl true
   def handle_cast({:add_robot, count}, state) do
+    IO.puts("Handling add robot !")
     RobotDynSupervisor.add_worker(state[:name], count)
     {:no_reply, state}
   end

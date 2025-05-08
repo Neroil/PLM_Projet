@@ -10,6 +10,7 @@ defmodule Robot do
   @impl true
   def init(state) do
     # Démarre la boucle
+    IO.puts("Bip boop, I am a robot !!")
     Process.send_after(self(), :work, 0)
     {:ok, state}
   end
