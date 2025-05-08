@@ -2,6 +2,8 @@ defmodule SpaceCapitalismWeb.GameLive do
   use SpaceCapitalismWeb, :live_view
   alias Phoenix.PubSub
 
+
+
   @impl true
   def mount(_params, _session, socket) do
     # Initialize game state
@@ -95,26 +97,27 @@ defmodule SpaceCapitalismWeb.GameLive do
       )
 
     # Start timers for production and events
-    if connected?(socket) do
-      # Production timer - every second
-      :timer.send_interval(1000, self(), :tick_production)
+    # if connected?(socket) do
+    #   # Production timer - every second
+    #   :timer.send_interval(1000, self(), :tick_production)
 
-      # Market update timer - every 30 seconds
-      :timer.send_interval(30000, self(), :update_market)
+    #   # Market update timer - every 30 seconds
+    #   :timer.send_interval(30000, self(), :update_market)
 
-      # Event timer - random event every 2 minutes
-      :timer.send_interval(120000, self(), :random_event)
+    #   # Event timer - random event every 2 minutes
+    #   :timer.send_interval(120000, self(), :random_event)
 
-      # Tax timer - every 5 minutes
-      :timer.send_interval(300000, self(), :collect_taxes)
+    #   # Tax timer - every 5 minutes
+    #   :timer.send_interval(300000, self(), :collect_taxes)
 
-      # Subscribe to game events
-      PubSub.subscribe(SpaceCapitalism.PubSub, "game_events")
-    end
+    #   # Subscribe to game events
+    #   PubSub.subscribe(SpaceCapitalism.PubSub, "game_events")
+    # end
 
     {:ok, socket}
   end
 
+  @doc """
   # Handle production tick
   @impl true
   def handle_info(:tick_production, socket) do
@@ -241,7 +244,7 @@ defmodule SpaceCapitalismWeb.GameLive do
       total_tax = (planet_count - 1) * tax_per_planet
 
       new_resources = Map.update!(socket.assigns.resources, :money, &(&1 - total_tax))
-      new_events = [%{message: "Paid #{total_tax} $dG in planetary taxes."} | socket.assigns.events] |> Enum.take(5)
+      new_events = [%{message: "Paid # {total_tax} $dG in planetary taxes."} | socket.assigns.events] |> Enum.take(5)
 
       socket = socket
         |> assign(:resources, new_resources)
@@ -263,6 +266,14 @@ defmodule SpaceCapitalismWeb.GameLive do
       {:noreply, assign(socket, :tax_timer, new_timer)}
     end
   end
+  """
+
+  @impl true
+  def handle_event("upgrade_planet", %{"planet" => planet_id}, socket) do
+    val = Resource.get(:iron)
+    IO.puts("#{val} iron")
+    {:noreply, socket}
+  end
 
   # Handle events from UI
   @impl true
@@ -270,51 +281,54 @@ defmodule SpaceCapitalismWeb.GameLive do
 
     # Testing Guillaume's functions
     Planet.add_robot(:mars, 1)
+    #Planet.get_resource(:mars)
 
-    # Find the planet
-    planet_index = Enum.find_index(socket.assigns.planets, &(&1.id == planet_id))
+    # # Find the planet
+    # planet_index = Enum.find_index(socket.assigns.planets, &(&1.id == planet_id))
 
-    if planet_index do
-      planet = Enum.at(socket.assigns.planets, planet_index)
+    # if planet_index do
+    #   planet = Enum.at(socket.assigns.planets, planet_index)
 
-      # Check if player can afford the robot
-      if socket.assigns.resources.money >= planet.robot_cost do
-        # Update money
-        new_resources = Map.update!(socket.assigns.resources, :money, &(&1 - planet.robot_cost))
+    #   # Check if player can afford the robot
+    #   if socket.assigns.resources.money >= planet.robot_cost do
+    #     # Update money
+    #     new_resources = Map.update!(socket.assigns.resources, :money, &(&1 - planet.robot_cost))
 
-        # Update planet robots
-        updated_planet = Map.update!(planet, :robots, &(&1 + 1))
-        # Update production rate based on new robot count
-        updated_planet = Map.update!(updated_planet, :production_rate, fn rate ->
-          # Each robot produces a base amount per minute
-          base_rate_per_robot = 2
-          updated_planet.robots * base_rate_per_robot
-        end)
+    #     # Update planet robots
+    #     updated_planet = Map.update!(planet, :robots, &(&1 + 1))
+    #     # Update production rate based on new robot count
+    #     updated_planet = Map.update!(updated_planet, :production_rate, fn rate ->
+    #       # Each robot produces a base amount per minute
+    #       base_rate_per_robot = 2
+    #       updated_planet.robots * base_rate_per_robot
+    #     end)
 
-        # Update planets list
-        new_planets = List.replace_at(socket.assigns.planets, planet_index, updated_planet)
+    #     # Update planets list
+    #     new_planets = List.replace_at(socket.assigns.planets, planet_index, updated_planet)
 
-        # Update total robot count
-        new_total = socket.assigns.total_robots + 1
+    #     # Update total robot count
+    #     new_total = socket.assigns.total_robots + 1
 
-        # Update maintenance cost
-        new_maintenance = new_total * 10  # 10 $dG per robot
+    #     # Update maintenance cost
+    #     new_maintenance = new_total * 10  # 10 $dG per robot
 
-        socket = socket
-          |> assign(:resources, new_resources)
-          |> assign(:planets, new_planets)
-          |> assign(:total_robots, new_total)
-          |> assign(:maintenance_cost, new_maintenance)
+    #     socket = socket
+    #       |> assign(:resources, new_resources)
+    #       |> assign(:planets, new_planets)
+    #       |> assign(:total_robots, new_total)
+    #       |> assign(:maintenance_cost, new_maintenance)
 
-        {:noreply, socket}
-      else
-        {:noreply, put_flash(socket, :error, "Not enough money to buy robot!")}
-      end
-    else
-      {:noreply, socket}
-    end
+    #     {:noreply, socket}
+    #   else
+    #     {:noreply, put_flash(socket, :error, "Not enough money to buy robot!")}
+    #   end
+    # else
+    #   {:noreply, socket}
+    # end
+    {:noreply, socket}
   end
 
+  @doc """
   @impl true
   def handle_event("buy_planet", %{"planet" => planet_id}, socket) do
     # Find the planet to buy
@@ -340,7 +354,7 @@ defmodule SpaceCapitalismWeb.GameLive do
         new_available = Enum.reject(socket.assigns.available_planets, &(&1.id == planet_id))
 
         # Add event
-        new_events = [%{message: "Purchased planet #{planet.name}!"} | socket.assigns.events] |> Enum.take(5)
+        new_events = [%{message: "Purchased planet # {planet.name}!"} | socket.assigns.events] |> Enum.take(5)
 
         socket = socket
           |> assign(:resources, new_resources)
@@ -378,7 +392,7 @@ defmodule SpaceCapitalismWeb.GameLive do
         |> Map.update!(:money, &(&1 + sale_value))
 
       # Add event
-      new_events = [%{message: "Sold #{amount} #{resource} for #{sale_value} $dG."} | socket.assigns.events] |> Enum.take(5)
+      new_events = [%{message: "Sold # {amount} # {resource} for # {sale_value} $dG."} | socket.assigns.events] |> Enum.take(5)
 
       socket = socket
         |> assign(:resources, new_resources)
@@ -386,7 +400,7 @@ defmodule SpaceCapitalismWeb.GameLive do
 
       {:noreply, socket}
     else
-      {:noreply, put_flash(socket, :error, "Not enough #{resource} to sell!")}
+      {:noreply, put_flash(socket, :error, "Not enough # {resource} to sell!")}
     end
   end
 
@@ -411,7 +425,7 @@ defmodule SpaceCapitalismWeb.GameLive do
         |> Map.update!(:money, &(&1 - purchase_cost))
 
       # Add event
-      new_events = [%{message: "Bought #{amount} #{resource} for #{purchase_cost} $dG."} | socket.assigns.events] |> Enum.take(5)
+      new_events = [%{message: "Bought # {amount} # {resource} for # {purchase_cost} $dG."} | socket.assigns.events] |> Enum.take(5)
 
       socket = socket
         |> assign(:resources, new_resources)
@@ -419,7 +433,7 @@ defmodule SpaceCapitalismWeb.GameLive do
 
       {:noreply, socket}
     else
-      {:noreply, put_flash(socket, :error, "Not enough money to buy #{resource}!")}
+      {:noreply, put_flash(socket, :error, "Not enough money to buy # {resource}!")}
     end
   end
 
@@ -477,7 +491,7 @@ defmodule SpaceCapitalismWeb.GameLive do
           end
 
         # Add event
-        new_events = [%{message: "Purchased upgrade: #{upgrade.name}!"} | socket.assigns.events] |> Enum.take(5)
+        new_events = [%{message: "Purchased upgrade: # {upgrade.name}!"} | socket.assigns.events] |> Enum.take(5)
 
         socket = socket
           |> assign(:resources, new_resources)
@@ -492,4 +506,5 @@ defmodule SpaceCapitalismWeb.GameLive do
       {:noreply, socket}
     end
   end
+  """
 end

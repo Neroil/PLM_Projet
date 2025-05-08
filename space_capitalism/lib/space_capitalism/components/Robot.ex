@@ -2,28 +2,27 @@ defmodule Robot do
   use GenServer
 
   # Démarre le GenServer
-  def start_link({time, ressource}) do
-    GenServer.start_link(__MODULE__, {time, ressource})
+  def start_link({time, resource}) do
+    GenServer.start_link(__MODULE__, %{time: time, resource: resource})
   end
 
   # Callback pour initialiser l'état
   @impl true
   def init(state) do
-    # Démarre la boucle
+    # # Démarre la boucle
     IO.puts("Bip boop, I am a robot !!")
-    Process.send_after(self(), :work, 0)
+    Process.send_after(self(), :work, state[:time])
     {:ok, state}
   end
 
   # Gère les messages : ici l'action et la récursion
   @impl true
-  def handle_info(:work, {time, ressource}) do
-    Resource.add(ressource, 1)
-    IO.puts("Add 1 to #{ressource}")
-    :timer.sleep(time) # Temps d'attente entre actions
+  def handle_info(:work, state) do
+    Resource.add(state[:resource], 1)
+    :timer.sleep(state[:time]) # Temps d'attente entre actions
 
     # Continue la boucle
     Process.send_after(self(), :work, 0)
-    {:noreply, {time, ressource}}
+    {:noreply, state}
   end
 end
