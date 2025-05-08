@@ -3,7 +3,7 @@ defmodule Robot do
 
   # Démarre le GenServer
   def start_link({time, ressource}) do
-    GenServer.start_link(__MODULE__, {time, ressource}, name: __MODULE__)
+    GenServer.start_link(__MODULE__, {time, ressource})
   end
 
   # Callback pour initialiser l'état
