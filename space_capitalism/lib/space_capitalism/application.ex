@@ -16,7 +16,9 @@ defmodule SpaceCapitalism.Application do
       # Start a worker by calling: SpaceCapitalism.Worker.start_link(arg)
       # {SpaceCapitalism.Worker, arg},
       # Start to serve requests, typically the last entry
-      SpaceCapitalismWeb.Endpoint
+      SpaceCapitalismWeb.Endpoint,
+
+      GameSupervisor
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

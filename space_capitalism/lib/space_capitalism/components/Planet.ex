@@ -3,14 +3,15 @@ defmodule Planet do
 
   # Démarrer un Planet avec un nom et une ressource initiale
   def start_link({name, resource}) do
-    DynamicSupervisor.start_link(Robo)
-    GenServer.start_link(__MODULE__, resource, name: name)
+    IO.puts("Planet #{name}")
+    {:ok, pid} = RobotDynSupervisor.start_link(name)
+    GenServer.start_link(__MODULE__, %{resource: resource, robots: pid, name: name})
   end
 
 
   @impl true
-  def init(resource) do
-    {:ok, %{resource: resource}}
+  def init(state) do
+    {:ok, state}
   end
 
   # Obtenir l'état du Planet
@@ -18,8 +19,20 @@ defmodule Planet do
     GenServer.call(name, :get_resource)
   end
 
+  # Ajoute count Robot à la Planet
+  def add_robot(name, count) do
+    GenServer.cast(name, {:add_robot, count})
+  end
+
   @impl true
   def handle_call(:get_resource, _from, state) do
     {:reply, state.resource, state}
   end
+
+  @impl true
+  def handle_cast({:add_robot, count}, state) do
+    RobotDynSupervisor.add_worker(state[:name], count)
+    {:no_reply, state}
+  end
+
 end

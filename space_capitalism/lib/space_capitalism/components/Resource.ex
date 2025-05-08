@@ -2,8 +2,9 @@ defmodule Resource do
   use Agent
 
   # Démarrer un Agent avec un état initial et un nom unique
-  def start_link([initial_count, opts]) do
-    Agent.start_link(fn -> initial_count end, opts)
+  def start_link(initial_count) do
+    IO.puts("Ressource")
+    Agent.start_link(fn -> initial_count end)
   end
 
   # Obtenir le nombre actuel de ressources
