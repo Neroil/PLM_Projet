@@ -1,0 +1,177 @@
+<div class="game-container mx-auto p-3 md:p-5 max-w-7xl bg-slate-950 text-slate-300 font-mono min-h-screen selection:bg-purple-500 selection:text-white">
+  <h1 class="text-3xl md:text-4xl font-bold text-center mb-2 text-cyan-400 title-glow --tw-shadow-color-rgb:6,182,212 uppercase tracking-wider">
+      Space Capitalism
+  </h1>
+  <p class="text-center text-xs text-yellow-400 mb-6 tracking-widest">// YEAR 2467 ::: GALACTIC EXPANSION PROTOCOL //</p>
+
+  <div class="stats-overview container-hud --hud-border-color:#10b981 --tw-shadow-color-rgb:16,185,129 mb-5">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-3 text-xs">
+      <div>
+        <h2 class="section-header text-green-400 border-green-500">// RESOURCES_MANIFEST //</h2>
+        <div class="mt-1.5 space-y-0.5">
+          <div class="flex justify-between">
+            <span>Doublons Galactiques:</span>
+            <span class="font-bold text-yellow-300 text-glow-yellow"><%= @resources.money %> $dG</span>
+          </div>
+          <div class="flex justify-between"><span>Iron (Fe):</span> <span class="text-slate-100"><%= @resources.iron %></span></div>
+          <div class="flex justify-between"><span>Gold (Or):</span> <span class="text-slate-100"><%= @resources.gold %></span></div>
+          <div class="flex justify-between"><span>Uranium (Ur):</span> <span class="text-slate-100"><%= @resources.uranium %></span></div>
+          <div class="flex justify-between"><span>Plutonium (Pu):</span> <span class="text-slate-100"><%= @resources.plutonium %></span></div>
+          <div class="flex justify-between"><span>Hasheidium (Hu):</span> <span class="text-slate-100"><%= @resources.hasheidium %></span></div>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="section-header text-blue-400 border-blue-500">// PERSONNEL_ROSTER //</h2>
+        <div class="mt-1.5 space-y-0.5">
+          <div class="flex justify-between"><span>Total Robots:</span> <span class="text-slate-100"><%= @total_robots %></span></div>
+          <div class="flex justify-between"><span>Monthly Maintenance:</span> <span class="text-orange-400 text-glow-orange"><%= @maintenance_cost %> $dG</span></div>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="section-header text-purple-400 border-purple-500">// ASTRO_DOMINION //</h2>
+        <div class="mt-1.5 space-y-0.5">
+          <div class="flex justify-between"><span>Owned Planets:</span> <span class="text-slate-100"><%= length(@planets) %>/10</span></div>
+          <div class="flex justify-between"><span>Tax Due (Cycles):</span> <span class="text-red-400"><%= @tax_timer %> min</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="event-feed-container mb-5">
+    <h2 class="text-sm font-bold text-amber-400 mb-1 tracking-wider">// GALACTIC_NEWS_STREAM //</h2>
+    <div class="data-feed">
+      <%= if Enum.empty?(@events) do %>
+        <p class="text-slate-600 italic animate-pulse">[Awaiting GNN transmissions...]</p>
+      <% else %>
+        <%= for event <- @events do %>
+          <div class="event-item">
+            <p class="text-xs"><span class="text-sky-600">&gt; [<%= "LOG" %>]</span> <%= event.message %></p>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+    <div class="lg:col-span-2 content-panel border-color-purple">
+      <h2 class="section-header text-purple-400 border-purple-500">// PLANETARY_COMMAND_INTERFACE //</h2>
+
+      <div class="planets-list space-y-2.5 max-h-[calc(100vh-420px)] min-h-[200px] overflow-y-auto pr-1 custom-scrollbar">
+        <%= if Enum.empty?(@planets) do %>
+          <p class="text-slate-500 italic p-3 border border-dashed border-slate-700 text-center text-sm">No planets colonized. Expand your intergalactic portfolio!</p>
+        <% else %>
+          <%= for planet <- @planets do %>
+            <div class="planet-item bg-slate-900/70 border border-slate-700 p-2.5 shadow-md hover:border-purple-500/70 transition-all duration-150">
+              <div class="flex justify-between items-start mb-1.5">
+                <h3 class="text-md font-semibold text-cyan-300"><%= planet.name %></h3>
+                <span class={
+                  "resource-badge resource-badge-" <> case planet.resource_type do
+                    "Iron" -> "Fe"
+                    "Gold" -> "Or"
+                    "Uranium" -> "Ur"
+                    "Plutonium" -> "Pu"
+                    "Hasheidium" -> "Hu"
+                    _ -> "Default"
+                  end
+                }>
+                  <%= planet.resource_type %>
+                </span>
+              </div>
+
+              <div class="text-xs space-y-0.5 mb-2 text-slate-400">
+                <div class="flex justify-between"><span>ROBOT_UNITS ::</span> <span class="text-green-400 font-semibold"><%= planet.robots %></span></div>
+                <div class="flex justify-between"><span>PROD_OUTPUT ::</span> <span class="text-green-400 font-semibold"><%= planet.production_rate %>/cycle</span></div>
+              </div>
+
+              <div class="mt-2 flex flex-wrap gap-1.5">
+                <button phx-click="add_robot" phx-value-planet={planet.id} class="pixel-button pixel-button-green">
+                  ADD_ROBOT (<%= planet.robot_cost %> $dG)
+                </button>
+                <button phx-click="upgrade_planet" phx-value-planet={planet.id} class="pixel-button pixel-button-blue">
+                  UPGRADE_INFRA (<%= planet.upgrade_cost %> $dG)
+                </button>
+              </div>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+
+      <%= if length(@available_planets) > 0 do %>
+        <div class="mt-3 pt-2.5 border-t-2 border-slate-700/50">
+          <h3 class="text-sm font-semibold text-yellow-300 mb-1.5 tracking-wider">// UNCHARTED_WORLDS_FOR_ACQUISITION //</h3>
+          <div class="available-planets mt-1.5 space-y-1.5">
+            <%= for planet <- @available_planets do %>
+              <div class="planet-item bg-slate-800/60 border border-slate-700 p-1.5 flex justify-between items-center hover:bg-slate-700/80 transition-colors duration-100">
+                <div class="text-xs">
+                  <span class="font-semibold text-slate-200"><%= planet.name %></span>
+                  <span class="text-slate-500">(<%= planet.resource_type %>)</span>
+                </div>
+                <button phx-click="buy_planet" phx-value-planet={planet.id} class="pixel-button pixel-button-green text-[0.6rem] px-1.5 py-1">
+                  COLONIZE (<%= planet.cost %> $dG)
+                </button>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="space-y-5">
+      <div class="content-panel border-color-yellow">
+        <h2 class="section-header text-yellow-400 border-yellow-500">// GALACTIC_COMMODITIES_EXCHANGE //</h2>
+        <div class="resource-market space-y-1.5 text-xs max-h-52 overflow-y-auto pr-1 custom-scrollbar">
+          <%= for {resource, data} <- @market do %>
+            <div class="market-item bg-slate-900/70 border border-slate-700 p-1.5 hover:border-yellow-500/70">
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-slate-200 uppercase font-semibold"><%= resource %></span>
+                <span class={"font-bold " <> if data.trend > 0, do: "text-green-400", else: "text-red-400"}>
+                  <%= data.price %> $dG
+                  <%= if data.trend > 0 do %>▲<% else %>▼<% end %>
+                </span>
+              </div>
+              <div class="mt-1 flex flex-wrap gap-1.5 justify-between">
+                <div class="flex items-center space-x-1">
+                   <label for={"sell-#{resource}"} class="sr-only">Sell <%= resource %></label>
+                  <input type="number" name={"sell_amount_#{resource}"} id={"sell-#{resource}"} min="0" max={Map.get(@resources, String.to_atom(String.downcase(resource)))} class="input-pixel w-12" placeholder="QTY"/>
+                  <button phx-click="sell_resource" phx-value-resource={resource} phx-target={["#sell-#{resource}"]} class="pixel-button pixel-button-yellow text-[0.6rem] px-1.5 py-1">
+                    SELL
+                  </button>
+                </div>
+                <div class="flex items-center space-x-1">
+                  <label for={"buy-#{resource}"} class="sr-only">Buy <%= resource %></label>
+                  <input type="number" name={"buy_amount_#{resource}"} id={"buy-#{resource}"} min="0" class="input-pixel w-12" placeholder="QTY"/>
+                  <button phx-click="buy_resource" phx-value-resource={resource} phx-target={["#buy-#{resource}"]} class="pixel-button pixel-button-blue text-[0.6rem] px-1.5 py-1">
+                    BUY
+                  </button>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <div class="content-panel border-color-sky">
+        <h2 class="section-header text-sky-400 border-sky-500">// XENOTECH_R&D_LAB //</h2>
+        <div class="upgrades space-y-1.5 max-h-52 overflow-y-auto pr-1 custom-scrollbar">
+           <%= if Enum.empty?(@available_upgrades) do %>
+              <p class="text-slate-500 italic p-2 text-xs text-center">All schematics acquired or research offline.</p>
+           <% else %>
+              <%= for upgrade <- @available_upgrades do %>
+              <div class="upgrade-item bg-slate-900/70 border border-slate-700 p-1.5 flex justify-between items-center hover:border-sky-500/70">
+                  <div class="text-xs">
+                    <span class="font-semibold text-slate-100 text-sm"><%= upgrade.name %></span>
+                    <p class="text-slate-400 text-[0.65rem] leading-tight"><%= upgrade.description %></p>
+                  </div>
+                  <button phx-click="buy_upgrade" phx-value-upgrade={upgrade.id} class="pixel-button pixel-button-purple text-[0.6rem] px-1.5 py-1 whitespace-nowrap">
+                    RESEARCH (<%= upgrade.cost %> $dG)
+                  </button>
+              </div>
+              <% end %>
+           <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

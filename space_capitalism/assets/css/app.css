@@ -3,3 +3,150 @@
 @import "tailwindcss/utilities";
 
 /* This file is for your main application CSS */
+/* Import a pixel font if you like, e.g., from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+
+body {
+    font-family: 'Press Start 2P', system-ui, sans-serif;
+    background-color: rgba(15, 23, 42);
+    background-image: 
+      radial-gradient(white 1px, transparent 1px),
+      radial-gradient(white 1px, transparent 1px);
+    background-size: 100px 100px, 150px 150px;
+    background-position: 0 0, 50px 50px;
+    color: white;
+  }
+  
+  .title-glow {
+    text-shadow: 0 0 5px currentColor, 0 0 10px currentColor, 0 0 15px rgba(var(--tw-shadow-color-rgb), 0.5);
+  }
+  .text-glow-green { text-shadow: 0 0 4px #34d399, 0 0 8px #34d399; }
+  .text-glow-cyan { text-shadow: 0 0 4px #22d3ee, 0 0 8px #22d3ee; }
+  .text-glow-yellow { text-shadow: 0 0 4px #facc15, 0 0 8px #facc15; }
+  .text-glow-purple { text-shadow: 0 0 4px #c084fc, 0 0 8px #c084fc; }
+  .text-glow-orange { text-shadow: 0 0 4px #fb923c, 0 0 8px #fb923c; }
+  
+  
+  .container-hud {
+    background-color: rgba(15, 23, 42, 0.85); /* e.g., slate-900 with opacity */
+    border: 2px solid var(--hud-border-color, #0891b2); /* Default cyan-600 */
+    box-shadow: 0 0 12px rgba(var(--tw-shadow-color-rgb), 0.6), inset 0 0 8px rgba(var(--tw-shadow-color-rgb), 0.4);
+    padding: 1rem; /* 16px */
+    margin-bottom: 1.5rem; /* 24px */
+    border-radius: 0; /* Sharp corners */
+  }
+  
+  .pixel-button {
+    /* font-family: 'Press Start 2P', system-ui; */ /* Uncomment if using this font */
+    border: 2px solid;
+    border-radius: 0; /* Sharp corners */
+    padding: 0.4rem 0.6rem;
+    text-transform: uppercase;
+    font-size: 0.7rem; /* Adjusted for pixel feel */
+    letter-spacing: 0.05em;
+    transition: all 0.1s ease-in-out;
+    image-rendering: pixelated; /* Helps with pixel font rendering */
+    position: relative; /* For pseudo-elements if needed for more effects */
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1); /* Subtle inner highlight */
+  }
+  
+  .pixel-button:hover {
+    transform: translateY(-1px) translateX(-1px);
+    box-shadow: 1px 1px 0px currentColor, inset 0 0 5px rgba(255,255,255,0.2);
+  }
+  .pixel-button:active {
+    transform: translateY(0px) translateX(0px);
+    box-shadow: inset 0 0 5px rgba(0,0,0,0.3);
+  }
+  
+  .pixel-button-green { background-color: #166534; border-color: #22c55e; color: #dcfce7; --tw-shadow-color-rgb: 34,197,94; }
+  .pixel-button-green:hover { background-color: #15803d; border-color: #86efac; }
+  .pixel-button-blue { background-color: #1e40af; border-color: #3b82f6; color: #dbeafe; --tw-shadow-color-rgb: 59,130,246;}
+  .pixel-button-blue:hover { background-color: #1d4ed8; border-color: #93c5fd; }
+  .pixel-button-yellow { background-color: #854d0e; border-color: #eab308; color: #fefce8; --tw-shadow-color-rgb: 234,179,8;}
+  .pixel-button-yellow:hover { background-color: #a16207; border-color: #fde047; }
+  .pixel-button-purple { background-color: #581c87; border-color: #a855f7; color: #f3e8ff; --tw-shadow-color-rgb: 168,85,247;}
+  .pixel-button-purple:hover { background-color: #6b21a8; border-color: #c084fc; }
+  
+  .input-pixel {
+    background-color: rgba(15, 23, 42, 0.9); /* slate-900 */
+    border: 2px solid #334155; /* slate-700 */
+    color: #e2e8f0; /* slate-200 */
+    padding: 0.3rem 0.5rem;
+    border-radius: 0;
+    /* font-family: 'VT323', monospace; */ /* Uncomment if using this font */
+    font-size: 0.85rem;
+    width: 4.5rem; /* Adjust as needed */
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.4);
+  }
+  .input-pixel:focus {
+    outline: none;
+    border-color: #0ea5e9; /* sky-500 */
+    box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.4), inset 0 1px 3px rgba(0,0,0,0.4);
+  }
+  
+  .data-feed {
+    /* font-family: 'VT323', monospace; */ /* Or 'Courier New', monospace */
+    background-color: rgba(2, 6, 23, 0.9); /* slate-950, very dark */
+    border: 2px solid #1e40af; /* blue-800 */
+    padding: 0.75rem;
+    color: #60a5fa; /* blue-400 */
+    max-height: 8rem; /* 128px */
+    overflow-y: auto;
+    border-radius: 0;
+    box-shadow: inset 0 0 10px rgba(30, 64, 175, 0.7);
+    line-height: 1.3;
+  }
+  .data-feed::-webkit-scrollbar { width: 10px; }
+  .data-feed::-webkit-scrollbar-track { background: #0f172a; /* slate-900 */ border-left: 1px solid #1e40af; }
+  .data-feed::-webkit-scrollbar-thumb { background: #1e40af; /* blue-800 */ border: 1px solid #2563eb; }
+  .data-feed::-webkit-scrollbar-thumb:hover { background: #2563eb; /* blue-600 */ }
+  .data-feed .event-item {
+    border-bottom: 1px dashed rgba(30, 58, 138, 0.7); /* blue-900 with opacity */
+    padding-bottom: 0.3rem;
+    margin-bottom: 0.3rem;
+  }
+  .data-feed .event-item:last-child { border-bottom: none; }
+  
+  .resource-badge {
+    /* font-family: 'Press Start 2P', system-ui; */
+    font-size: 0.6rem;
+    padding: 0.2rem 0.45rem;
+    border-radius: 0;
+    border: 2px solid;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: bold;
+    box-shadow: 1px 1px 0px 0px rgba(0,0,0,0.5); /* Basic pixel shadow */
+  }
+  .resource-badge-Fe { background-color: #374151; border-color: #6b7280; color: #d1d5db; } /* Gray */
+  .resource-badge-Or { background-color: #78350f; border-color: #f59e0b; color: #fef3c7; } /* Gold */
+  .resource-badge-Ur { background-color: #065f46; border-color: #10b981; color: #a7f3d0; } /* Uranium - Green */
+  .resource-badge-Pu { background-color: #4c1d95; border-color: #8b5cf6; color: #ede9fe; } /* Plutonium - Purple */
+  .resource-badge-Hu { background-color: #083344; border-color: #06b6d4; color: #a5f3fc; } /* Hasheidium - Cyan */
+  .resource-badge-Default { background-color: #1f2937; border-color: #4b5563; color: #9ca3af; }
+  
+  /* Utility for section headers */
+  .section-header {
+    font-size: 1.1rem; /* text-lg */
+    font-weight: bold;
+    margin-bottom: 0.75rem; /* mb-3 */
+    border-bottom-width: 2px;
+    padding-bottom: 0.25rem; /* pb-1 */
+    letter-spacing: 0.05em;
+    font-family: 'Press Start 2P', system-ui; /* Uncomment if using this font */
+  }
+  
+  /* Styling for the main content area panels */
+  .content-panel {
+    background-color: rgba(30, 41, 59, 0.8);
+    border: 2px solid var(--panel-border-color, #4f46e5);
+    box-shadow: 0 0 10px rgba(var(--tw-shadow-color-rgb),0.5), inset 0 0 6px rgba(var(--tw-shadow-color-rgb),0.3);
+    padding: 1rem;
+    border-radius: 0;
+  }
+  
+  /* Specific panel border colors */
+  .border-color-purple { --panel-border-color: #7e22ce; --tw-shadow-color-rgb: 126,34,206; } 
+  .border-color-yellow { --panel-border-color: #ca8a04; --tw-shadow-color-rgb: 202,138,4; } 
+  .border-color-sky { --panel-border-color: #0369a1; --tw-shadow-color-rgb: 3,105,161; } 

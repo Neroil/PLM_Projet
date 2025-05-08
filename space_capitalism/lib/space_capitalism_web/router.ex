@@ -40,5 +40,12 @@ defmodule SpaceCapitalismWeb.Router do
       live_dashboard "/dashboard", metrics: SpaceCapitalismWeb.Telemetry
       forward "/mailbox", Plug.Swoosh.MailboxPreview
     end
+
+    scope "/", SpaceCapitalismWeb do
+      pipe_through :browser
+
+      get "/", PageController, :home
+      live "/game", GameLive
+    end
   end
 end
