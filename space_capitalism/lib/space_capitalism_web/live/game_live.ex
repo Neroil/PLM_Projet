@@ -7,50 +7,47 @@ defmodule SpaceCapitalismWeb.GameLive do
 
   @impl true
   def mount(_params, _session, socket) do
+    all_planets = PlanetSupervisor.getAllPlanets()
+
+    owned_planets =
+      all_planets
+      |> Map.values()
+      |> Enum.filter(fn planet -> planet.owned end)
+      |> Enum.map(fn planet ->
+        # Format the planet for display
+        %{
+          id: planet.id,
+          name: planet.name,
+          resource_type: planet.resource_type,
+          robots: planet.robots,
+          production_rate: planet.production_rate,
+          robot_cost: planet.robot_cost,
+          upgrade_cost: planet.upgrade_cost
+        }
+      end)
+
+    available_planets =
+      all_planets
+      |> Map.values()
+      |> Enum.filter(fn planet -> !planet.owned end)
+      |> Enum.map(fn planet ->
+        # Format available planets for display
+        %{
+          id: planet.id,
+          name: planet.name,
+          resource_type: planet.resource_type,
+          cost: planet.cost
+        }
+      end)
+
     # Initialize game state
     socket =
       assign(socket,
         page_title: "Space Capitalism",
         resources: ResourceSupervisor.getAllResources(),
-        total_robots: 10,
-        maintenance_cost: 100,
         tax_timer: 5,
-
-        # Initial planet (Mars with Iron)
-        planets: [
-          %{
-            id: "mars",
-            name: "Mars",
-            resource_type: "Iron (Fe)",
-            robots: 10,
-            production_rate: 20,
-            robot_cost: 500,
-            upgrade_cost: 2000
-          }
-        ],
-
-        # Available planets to purchase
-        available_planets: [
-          %{
-            id: "proxima",
-            name: "Proxima Centauri Z",
-            resource_type: "Gold (Or)",
-            cost: 5000
-          },
-          %{
-            id: "struve",
-            name: "Struve 2398",
-            resource_type: "Uranium (Ur)",
-            cost: 7500
-          },
-          %{
-            id: "barnard",
-            name: "Barnard E",
-            resource_type: "Iron (Fe)",
-            cost: 4500
-          }
-          # More planets can be added here
-        ],
+        planets: owned_planets,
+        available_planets: available_planets,
 
         # Market prices
         market: %{
@@ -111,20 +108,65 @@ defmodule SpaceCapitalismWeb.GameLive do
     # Start the function to update display
     :timer.send_interval(200, self(), :updateDisplay)
 
-
-
     {:ok, socket}
   end
 
-def handle_info(:updateDisplay, socket) do
-  # Gather data from backend and update the display
-  #Ressource.get
-  socket = socket
-    |> assign(:resources, ResourceSupervisor.getAllResources())
+  def handle_info(:updateDisplayOnClick, socket) do
+    # Get all planets from the supervisor
+    all_planets = PlanetSupervisor.getAllPlanets()
 
-  # Return the updated socket
-  {:noreply, socket}
-end
+    # Update owned planets
+    owned_planets =
+      all_planets
+      |> Map.values()
+      |> Enum.filter(fn planet -> planet.owned end)
+      |> Enum.map(fn planet ->
+        %{
+          id: planet.id,
+          name: planet.name,
+          resource_type: planet.resource_type,
+          robots: planet.robots,
+          production_rate: planet.production_rate,
+          robot_cost: planet.robot_cost,
+          upgrade_cost: planet.upgrade_cost
+        }
+      end)
+
+    # Update non owned planets
+    available_planets =
+      all_planets
+      |> Map.values()
+      |> Enum.filter(fn planet -> !planet.owned end)
+      |> Enum.map(fn planet ->
+        %{
+          id: planet.id,
+          name: planet.name,
+          resource_type: planet.resource_type,
+          cost: planet.cost
+        }
+      end)
+
+    # Update resources and assign to socket
+    updated_socket =
+      socket
+      |> assign(:resources, ResourceSupervisor.getAllResources())
+      |> assign(:planets, owned_planets)
+      |> assign(:available_planets, available_planets)
+
+    # Return the updated socket
+    {:noreply, updated_socket}
+  end
+
+  def handle_info(:updateDisplay, socket) do
+    # Update resources
+    socket =
+      socket
+      |> assign(:resources, ResourceSupervisor.getAllResources())
+
+    # Return the updated socket
+    {:noreply, socket}
+  end
+
   @doc """
   # Handle production tick
   @impl true
@@ -275,6 +317,23 @@ end
     end
   end
   """
+
+  @impl true
+  def handle_event("buy_planet", %{"planet" => planet_name}, socket) do
+    case PlanetSupervisor.buyPlanet(planet_name) do
+      {:ok, message} ->
+        # Update the planets list
+        send(self(), :updateDisplayOnClick)
+        {:noreply, put_flash(socket, :info, message)}
+
+      {:error, reason} ->
+        {:noreply, put_flash(socket, :error, reason)}
+
+      # Fallback for any other response format
+      _ ->
+        {:noreply, socket}
+    end
+  end
 
   @impl true
   def handle_event("upgrade_planet", %{"planet" => planet_id}, socket) do

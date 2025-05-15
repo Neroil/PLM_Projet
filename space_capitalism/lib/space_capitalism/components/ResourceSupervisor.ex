@@ -14,7 +14,7 @@ defmodule ResourceSupervisor do
     # Set intial resources for the game
     case res do
       :iron -> 500
-      :dG -> 10000
+      :dG -> 100000000
       :crypto1 -> 1000
       _ -> 0
     end
