@@ -8,6 +8,13 @@ defmodule SpaceCapitalismWeb.Router do
     plug :put_root_layout, html: {SpaceCapitalismWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+
+    plug Plug.Static,
+    at: "/",
+    from: :space_capitalism,
+    gzip: false,
+    only: ~w(assets fonts images favicon.ico robots.txt)
+
   end
 
   pipeline :api do
@@ -19,6 +26,7 @@ defmodule SpaceCapitalismWeb.Router do
 
     get "/", PageController, :home
   end
+
 
   # Other scopes may use custom stacks.
   # scope "/api", SpaceCapitalismWeb do

@@ -6,22 +6,100 @@ defmodule PlanetSupervisor do
     Supervisor.start_link(__MODULE__, nil, name: __MODULE__)
   end
 
+  def getPlanets() do
+    [
+      {:mars, 0, :iron, 100, 100, true},
+      {:proxima, 5000, :gold, 150, 120, false},
+      {:barnard, 8000, :iron, 200, 150, false},
+      {:struve, 15000, :uranium, 250, 180, false},
+      {:gui_ed, 25000, :gold, 300, 200, false},
+      {:toi, 40000, :plutonium, 400, 250, false},
+      {:trivia, 65000, :uranium, 500, 300, false},
+      {:ze_bi, 100_000, :plutonium, 650, 350, false},
+      {:yver_dion, 160_000, :hasheidium, 800, 400, false},
+      {:ches_om, 250_000, :hasheidium, 1000, 500, false}
+    ]
+  end
+
+  def getAllOwnedPlanets() do
+    Enum.filter(getPlanets(), fn {_name, _resource_type, _base_cost, _base_production, is_owned} ->
+      is_owned
+    end)
+  end
+
+  def getAllPlanets() do
+    Enum.map(getPlanets(), fn {name, cost, resource_type, _base_cost, _base_production, _is_owned} ->
+      planet_data = Planet.get_all_data(name)
+
+      {
+        name,
+        %{
+          id: name,
+          cost: cost,
+          name: to_string(name) |> String.capitalize(),
+          resource_type: to_string(resource_type) |> String.capitalize(),
+          robots: planet_data.robot_count,
+          production_rate: planet_data.production_rate,
+          robot_cost: planet_data.robot_price,
+          upgrade_cost: planet_data.upgrade_cost,
+          owned: planet_data.owned
+        }
+      }
+    end)
+    |> Enum.into(%{})
+  end
+
+  def addRobot(planet_id, count \\ 1) do
+    Planet.add_robot(planet_id, count)
+  end
+
+  def upgradePlanet(planet_id) do
+    Planet.upgrade(planet_id)
+  end
+
+  def buyPlanet(planet_string) do
+    # Convert planet_id into atom
+    planet_id =
+      if is_binary(planet_string), do: String.to_existing_atom(planet_string), else: planet_string
+
+    # Check if planet exists
+    case Enum.find(getPlanets(), fn {name, _, _, _, _, _} -> name == planet_id end) do
+      nil ->
+        {:error, "Planet #{planet_id} does not exist"}
+
+      {_name, cost, _resource, _rb_price, _rb_maintenance, is_owned} ->
+        if is_owned do
+          {:error, "Planet #{planet_id} is already owned"}
+        else
+          # Get current money
+          case Resource.get(:dG) do
+            money when money >= cost ->
+              # Call the Planet module to handle the purchase
+              Planet.buy_planet(planet_id)
+              {:ok, "Planet #{planet_id} purchased successfully"}
+
+            _ ->
+              {:error, "Not enough money to buy planet #{planet_id}"}
+          end
+        end
+    end
+  end
+
   @impl true
   def init(_) do
-    children = [
-      %{start: {PlanetRegistry, :start_link, []}, id: PlanetRegistry},
-      %{start: {Planet, :start_link, [{:mars, :iron, 100, 100}]}, id: :mars},
-      %{start: {Planet, :start_link, [{:proxima, :gold, 100, 100}]}, id: :proxima},
-      %{start: {Planet, :start_link, [{:struve, :uranium, 100, 100}]}, id: :struve},
-      %{start: {Planet, :start_link, [{:barnard, :iron, 100, 100}]}, id: :barnard},
-      %{start: {Planet, :start_link, [{:toi, :plutonium, 100, 100}]}, id: :toi},
-      %{start: {Planet, :start_link, [{:gui_ed, :gold, 100, 100}]}, id: :gui_ed},
-      %{start: {Planet, :start_link, [{:yver_dion, :hasheidium, 100, 100}]}, id: :yver_dionP},
-      %{start: {Planet, :start_link, [{:trivia, :uranium, 100, 100}]}, id: :trivia},
-      %{start: {Planet, :start_link, [{:ze_bi, :plutonium, 100, 100}]}, id: :ze_bi},
-      %{start: {Planet, :start_link, [{:ches_om, :hasheidium, 100, 100}]}, id: :ches_om}
-    ]
-
+    children =
+      [
+        %{start: {PlanetRegistry, :start_link, []}, id: PlanetRegistry}
+      ] ++
+        Enum.map(getPlanets(), fn {name, cost, resource_type, base_cost, base_production,
+                                   is_owned} ->
+          %{
+            start:
+              {Planet, :start_link,
+               [{name, cost, resource_type, base_cost, base_production, is_owned}]},
+            id: name
+          }
+        end)
 
     Supervisor.init(children, strategy: :one_for_one)
   end
