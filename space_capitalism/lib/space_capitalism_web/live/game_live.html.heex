@@ -15,11 +15,11 @@
   <div class="stats-overview container-hud --hud-border-color:#10b981 --tw-shadow-color-rgb:16,185,129 mb-5">
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-3 text-xs">
       <div>
-        <h2 class="section-header text-green-400 border-green-500 break-words hyphens-auto">// RESOURCES_MANIFEST //</h2>
+        <h2 class="section-header text-green-400 border-green-500 break-words hyphens-auto">RESOURCES_MANIFEST</h2>
         <div class="mt-1.5 space-y-0.5">
           <div class="flex justify-between">
             <span>Doublons Galactiques:</span>
-            <span class="font-bold text-yellow-300 text-glow-yellow"><%= @resources.money %> $dG</span>
+            <span class="font-bold text-yellow-300 text-glow-yellow"><%= @resources.dG %> $dG</span>
           </div>
           <div class="flex justify-between"><span>Iron (Fe):</span> <span class="text-slate-100"><%= @resources.iron %></span></div>
           <div class="flex justify-between"><span>Gold (Or):</span> <span class="text-slate-100"><%= @resources.gold %></span></div>
@@ -30,15 +30,15 @@
       </div>
 
       <div>
-        <h2 class="section-header text-blue-400 border-blue-500 break-words hyphens-auto">// PERSONNEL_ROSTER //</h2>
+        <h2 class="section-header text-blue-400 border-blue-500 break-words hyphens-auto">PERSONNEL_ROSTER</h2>
         <div class="mt-1.5 space-y-0.5">
-          <div class="flex justify-between"><span>Total Robots:</span> <span class="text-slate-100"><%= @total_robots %></span></div>
-          <div class="flex justify-between"><span>Monthly Maintenance:</span> <span class="text-orange-400 text-glow-orange"><%= @maintenance_cost %> $dG</span></div>
+          <div class="flex justify-between"><span>Total Robots:</span> <span class="text-slate-100"><%= @resources.robot %></span></div>
+          <div class="flex justify-between"><span>Monthly Maintenance:</span> <span class="text-orange-400 text-glow-orange"><%= @resources.robot_maintenance_cost %> $dG</span></div>
         </div>
       </div>
 
       <div>
-        <h2 class="section-header text-purple-400 border-purple-500 break-words hyphens-auto">// ASTRO_DOMINION //</h2>
+        <h2 class="section-header text-purple-400 border-purple-500 break-words hyphens-auto">ASTRO_DOMINION</h2>
         <div class="mt-1.5 space-y-0.5">
           <div class="flex justify-between"><span>Owned Planets:</span> <span class="text-slate-100"><%= length(@planets) %>/10</span></div>
           <div class="flex justify-between"><span>Tax Due (Cycles):</span> <span class="text-red-400"><%= @tax_timer %> min</span></div>
@@ -48,7 +48,7 @@
   </div>
 
   <div class="event-feed-container mb-5">
-    <h2 class="text-sm font-bold text-amber-400 mb-1 tracking-wider break-words hyphens-auto">// GALACTIC_NEWS_STREAM //</h2>
+    <h2 class="text-sm font-bold text-amber-400 mb-1 tracking-wider break-words hyphens-auto">GALACTIC_NEWS_STREAM</h2>
     <div class="data-feed">
       <%= if Enum.empty?(@events) do %>
         <p class="text-slate-600 italic animate-pulse">[Awaiting GNN transmissions...]</p>
@@ -64,7 +64,7 @@
 
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
     <div class="lg:col-span-2 content-panel border-color-purple">
-      <h2 class="section-header text-purple-400 border-purple-500 break-words hyphens-auto">// PLANETARY_COMMAND_INTERFACE //</h2>
+      <h2 class="section-header text-purple-400 border-purple-500 break-words hyphens-auto">PLANETARY_COMMAND_INTERFACE</h2>
 
       <div class="planets-list space-y-2.5 max-h-[calc(100vh-420px)] min-h-[200px] overflow-y-auto pr-1 custom-scrollbar">
         <%= if Enum.empty?(@planets) do %>
@@ -128,7 +128,7 @@
 
     <div class="space-y-5">
       <div class="content-panel border-color-yellow">
-        <h2 class="section-header text-yellow-400 border-yellow-500 break-words hyphens-auto">// GALACTIC_COMMODITIES_EXCHANGE //</h2>
+        <h2 class="section-header text-yellow-400 border-yellow-500 break-words hyphens-auto">GALACTIC_COMMODITIES_EXCHANGE</h2>
         <div class="resource-market space-y-1.5 text-xs max-h-52 overflow-y-auto pr-1 custom-scrollbar">
           <%= for {resource, data} <- @market do %>
             <div class="market-item bg-slate-900/70 border border-slate-700 p-1.5 hover:border-yellow-500/70">
@@ -161,7 +161,7 @@
       </div>
 
       <div class="content-panel border-color-sky">
-        <h2 class="section-header text-sky-400 border-sky-500 break-words hyphens-auto">// XENOTECH_R&D_LAB //</h2>
+        <h2 class="section-header text-sky-400 border-sky-500 break-words hyphens-auto">XENOTECH_R&D_LAB</h2>
         <div class="upgrades space-y-1.5 max-h-52 overflow-y-auto pr-1 custom-scrollbar">
            <%= if Enum.empty?(@available_upgrades) do %>
               <p class="text-slate-500 italic p-2 text-xs text-center">All schematics acquired or research offline.</p>

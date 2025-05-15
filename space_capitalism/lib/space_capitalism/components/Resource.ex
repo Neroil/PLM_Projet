@@ -1,6 +1,7 @@
 defmodule Resource do
   use Agent
 
+
   # Démarrer un Agent avec un état initial et un nom unique
   def start_link(initial_count, name) do
     IO.puts("Ressource")
@@ -19,6 +20,14 @@ defmodule Resource do
 
   # Enlever des ressources
   def remove(name, amount) do
-    Agent.update(name, fn count -> max(count - amount, 0) end)
+    Agent.get_and_update(name, fn count ->
+      if count >= amount do
+        # Successful removal
+        {{:ok, count - amount}, count - amount}
+      else
+        # Cannot remove more than available
+        {{:error, :insufficient_resources}, count}
+      end
+    end)
   end
 end

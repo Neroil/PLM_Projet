@@ -3,6 +3,7 @@ defmodule SpaceCapitalismWeb.GameLive do
   alias Phoenix.PubSub
 
   import SpaceCapitalismWeb.GameComponents
+  import ResourceSupervisor
 
   @impl true
   def mount(_params, _session, socket) do
@@ -10,16 +11,7 @@ defmodule SpaceCapitalismWeb.GameLive do
     socket =
       assign(socket,
         page_title: "Space Capitalism",
-        resources: %{
-          # Initial 10,000 doublons galactiques
-          money: 10_000,
-          # Initial 500 iron
-          iron: 500,
-          gold: 0,
-          uranium: 0,
-          plutonium: 0,
-          hasheidium: 0
-        },
+        resources: ResourceSupervisor.getAllResources(),
         total_robots: 10,
         maintenance_cost: 100,
         tax_timer: 5,
@@ -116,9 +108,23 @@ defmodule SpaceCapitalismWeb.GameLive do
     #   PubSub.subscribe(SpaceCapitalism.PubSub, "game_events")
     # end
 
+    # Start the function to update display
+    :timer.send_interval(200, self(), :updateDisplay)
+
+
+
     {:ok, socket}
   end
 
+def handle_info(:updateDisplay, socket) do
+  # Gather data from backend and update the display
+  #Ressource.get
+  socket = socket
+    |> assign(:resources, ResourceSupervisor.getAllResources())
+
+  # Return the updated socket
+  {:noreply, socket}
+end
   @doc """
   # Handle production tick
   @impl true

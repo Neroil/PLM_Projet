@@ -33,7 +33,10 @@ defmodule SpaceCapitalismWeb.GameComponents do
     ~H"""
     <div class={"planet-item #{@bg_class} border border-slate-700 #{@padding} shadow-md hover:#{@hover_class} transition-all duration-150"}>
       <div class="flex justify-between items-start mb-1.5">
+      <div class="flex items-center gap-2">
+
         <h3 class={"text-md font-semibold #{@name_color}"}><%= @planet.name %></h3>
+        </div>
         <%= if @show_resource_badge do %>
           <span class={resource_badge_class(@planet.resource_type)}>
             <%= @planet.resource_type %>

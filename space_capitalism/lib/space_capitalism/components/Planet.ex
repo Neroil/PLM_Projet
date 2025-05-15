@@ -13,10 +13,19 @@ defmodule Planet do
   use GenServer
 
   # Démarrer un Planet avec un nom et une ressource initiale
-  def start_link({name, resource}) do
+  def start_link({name, resource, rbPrice, rbMaintenance}) do
     IO.puts("Planet #{name}")
     {:ok, pid} = RobotDynSupervisor.start_link(name)
-    GenServer.start_link(__MODULE__, %{resource: resource, robots: pid, name: name}, name: {:via, Registry, {PlanetRegistry, name}})
+    GenServer.start_link(
+      __MODULE__,
+      %{
+        resource: resource,
+        robots: pid,
+        name: name,
+        robot_price: rbPrice,
+        robot_maintenance: rbMaintenance
+        },
+      name: {:via, Registry, {PlanetRegistry, name}})
   end
 
 
@@ -48,8 +57,12 @@ defmodule Planet do
 
   @impl true
   def handle_cast({:add_robot, count}, state) do
-    IO.puts("Handling add robot !")
-    RobotDynSupervisor.add_worker(state[:name], count, state[:resource])
+    #Check if enough money
+    case Resource.remove(:dG, count*state[:robot_price]) do
+      {:ok, _} -> RobotDynSupervisor.add_worker(state[:name], count, state[:resource], state[:robot_maintenance])
+      {:error, _} -> IO.puts("Not enough money")
+    end
+
     {:noreply, state}
   end
 

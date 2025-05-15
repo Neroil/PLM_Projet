@@ -6,20 +6,47 @@ defmodule ResourceSupervisor do
     Supervisor.start_link(__MODULE__, nil, name: __MODULE__)
   end
 
+  def getResources() do
+    [:iron, :gold, :uranium, :plutonium, :hasheidium, :dG, :crypto1, :crypto2, :crypto3, :robot, :robot_maintenance_cost]
+  end
+
+  def setInitialResources(res) do
+    # Set intial resources for the game
+    case res do
+      :iron -> 500
+      :dG -> 10000
+      :crypto1 -> 1000
+      _ -> 0
+    end
+  end
+
+  def addWorker(nbOfWorker, maintenance_cost) do
+    Resource.add(:robot, nbOfWorker)
+    Resource.add(:robot_maintenance_cost, maintenance_cost * nbOfWorker)
+  end
+
+  def applyMaintenanceCost() do
+    # Apply the maintenance cost of the robots
+    maintenance_cost = Resource.get(:robot_maintenance_cost)
+    dG = Resource.get(:dG)
+
+    Resource.set(:dG, dG - maintenance_cost)
+  end
+
+  def getAllResources() do
+    #Enum.map
+    Enum.map(getResources(), fn res ->
+      {res, Resource.get(res)}
+    end
+    )
+    |> Enum.into(%{})
+  end
+
   @impl true
   def init(_) do
-    children = [
-      %{start: {Resource, :start_link, [500, :iron]}, id: :iron},
-      %{start: {Resource, :start_link, [0, :gold]}, id: :gold},
-      %{start: {Resource, :start_link, [0, :uranium]}, id: :uranium},
-      %{start: {Resource, :start_link, [0, :plutonium]}, id: :plutonium},
-      %{start: {Resource, :start_link, [0, :hasheidium]}, id: :hasheidium},
-      %{start: {Resource, :start_link, [10000, :dG]}, id: :dG},
-      %{start: {Resource, :start_link, [1000, :crypto1]}, id: :crypto1},
-      %{start: {Resource, :start_link, [0, :crypto2]}, id: :crypto2},
-      %{start: {Resource, :start_link, [0, :crypto3]}, id: :crypto3}
-    ]
-
+    children = Enum.map(getResources(), fn res ->
+      %{start: {Resource, :start_link, [setInitialResources(res), res]}, id: res}
+    end)
     Supervisor.init(children, strategy: :one_for_one)
   end
 end

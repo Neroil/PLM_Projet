@@ -12,12 +12,15 @@ defmodule RobotDynSupervisor do
   end
 
   # Ajouter un worker dynamiquement
-  def add_worker(planet, count, resource) do
+  def add_worker(planet, count, resource, maintenance_cost) do
 
     for x <- 1..count do
       IO.puts("add_worker #{planet} #{x}")
+
       DynamicSupervisor.start_child(planet, {Robot, {1000, resource}})
     end
+
+    ResourceSupervisor.addWorker(count, maintenance_cost)
   end
 
 end
