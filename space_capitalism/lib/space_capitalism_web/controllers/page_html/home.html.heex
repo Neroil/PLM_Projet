@@ -1,4 +1,7 @@
-<div class="min-h-screen flex flex-col items-center justify-center bg-slate-950 text-slate-300 p-4 font-mono selection:bg-purple-500 selection:text-white">
+<div class="min-h-screen flex flex-col items-center justify-center bg-slate-950 text-slate-300 p-4 font-mono selection:bg-purple-500 selection:text-white relative overflow-hidden">
+  <!-- Starry background -->
+  <div id="stars-container" class="stars-container"></div>
+  
   <div class="relative z-10 text-center flex flex-col items-center">
     <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 text-cyan-400 title-glow --tw-shadow-color-rgb:6,182,212 uppercase tracking-wider leading-tight">
       Space Capitalism
@@ -12,7 +15,7 @@
       <a href="https://github.com/Neroil/PLM_Projet/tree/main" target="_blank" rel="noopener noreferrer" class="pixel-button pixel-button-blue text-base sm:text-lg w-full py-3 shadow-lg shadow-blue-500/30 hover:shadow-blue-400/40">
         ACCESS ARCHIVES (GITHUB)
       </a>
-      </div>
+    </div>
 
     <footer class="mt-16 text-xs text-slate-700 tracking-wider">
       <p>&copy; <%= DateTime.utc_now().year %> HEIG_VD. PROGRAMMING LANGUAGE MULTIVERS.</p>

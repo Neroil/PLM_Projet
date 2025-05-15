@@ -2,7 +2,7 @@ defmodule SpaceCapitalismWeb.GameLive do
   use SpaceCapitalismWeb, :live_view
   alias Phoenix.PubSub
 
-
+  import SpaceCapitalismWeb.GameComponents
 
   @impl true
   def mount(_params, _session, socket) do
@@ -11,8 +11,10 @@ defmodule SpaceCapitalismWeb.GameLive do
       assign(socket,
         page_title: "Space Capitalism",
         resources: %{
-          money: 10_000,      # Initial 10,000 doublons galactiques
-          iron: 500,          # Initial 500 iron
+          # Initial 10,000 doublons galactiques
+          money: 10_000,
+          # Initial 500 iron
+          iron: 500,
           gold: 0,
           uranium: 0,
           plutonium: 0,
@@ -278,10 +280,9 @@ defmodule SpaceCapitalismWeb.GameLive do
   # Handle events from UI
   @impl true
   def handle_event("add_robot", %{"planet" => planet_id}, socket) do
-
     # Testing Guillaume's functions
     Planet.add_robot(:mars, 1)
-    #Planet.get_resource(:mars)
+    # Planet.get_resource(:mars)
 
     # # Find the planet
     # planet_index = Enum.find_index(socket.assigns.planets, &(&1.id == planet_id))

@@ -1,13 +1,21 @@
-<div class="game-container mx-auto p-3 md:p-5 max-w-7xl bg-slate-950 text-slate-300 font-mono min-h-screen selection:bg-purple-500 selection:text-white">
-  <h1 class="text-3xl md:text-4xl font-bold text-center mb-2 text-cyan-400 title-glow --tw-shadow-color-rgb:6,182,212 uppercase tracking-wider">
-      Space Capitalism
-  </h1>
-  <p class="text-center text-xs text-yellow-400 mb-6 tracking-widest">// YEAR 2467 ::: GALACTIC EXPANSION PROTOCOL //</p>
+<div class="game-container mx-auto p-3 md:p-5 text-slate-300 font-mono min-h-screen selection:bg-purple-500 selection:text-white">
+  <!-- Viewport corner details -->
+  <div class="viewport-detail"></div>
+  <div class="viewport-detail"></div>
+  <div class="viewport-detail"></div>
+  <div class="viewport-detail"></div>
+  
+  <!-- Game content wrapper -->
+  <div class="game-content">
+    <h1 class="text-3xl md:text-4xl font-bold text-center mb-2 text-cyan-400 title-glow --tw-shadow-color-rgb:6,182,212 uppercase tracking-wider">
+        Space Capitalism
+    </h1>
+    <p class="text-center text-xs text-yellow-400 mb-6 tracking-widest">// YEAR 2467 ::: GALACTIC EXPANSION PROTOCOL //</p>
 
   <div class="stats-overview container-hud --hud-border-color:#10b981 --tw-shadow-color-rgb:16,185,129 mb-5">
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-3 text-xs">
       <div>
-        <h2 class="section-header text-green-400 border-green-500">// RESOURCES_MANIFEST //</h2>
+        <h2 class="section-header text-green-400 border-green-500 break-words hyphens-auto">// RESOURCES_MANIFEST //</h2>
         <div class="mt-1.5 space-y-0.5">
           <div class="flex justify-between">
             <span>Doublons Galactiques:</span>
@@ -22,7 +30,7 @@
       </div>
 
       <div>
-        <h2 class="section-header text-blue-400 border-blue-500">// PERSONNEL_ROSTER //</h2>
+        <h2 class="section-header text-blue-400 border-blue-500 break-words hyphens-auto">// PERSONNEL_ROSTER //</h2>
         <div class="mt-1.5 space-y-0.5">
           <div class="flex justify-between"><span>Total Robots:</span> <span class="text-slate-100"><%= @total_robots %></span></div>
           <div class="flex justify-between"><span>Monthly Maintenance:</span> <span class="text-orange-400 text-glow-orange"><%= @maintenance_cost %> $dG</span></div>
@@ -30,7 +38,7 @@
       </div>
 
       <div>
-        <h2 class="section-header text-purple-400 border-purple-500">// ASTRO_DOMINION //</h2>
+        <h2 class="section-header text-purple-400 border-purple-500 break-words hyphens-auto">// ASTRO_DOMINION //</h2>
         <div class="mt-1.5 space-y-0.5">
           <div class="flex justify-between"><span>Owned Planets:</span> <span class="text-slate-100"><%= length(@planets) %>/10</span></div>
           <div class="flex justify-between"><span>Tax Due (Cycles):</span> <span class="text-red-400"><%= @tax_timer %> min</span></div>
@@ -40,7 +48,7 @@
   </div>
 
   <div class="event-feed-container mb-5">
-    <h2 class="text-sm font-bold text-amber-400 mb-1 tracking-wider">// GALACTIC_NEWS_STREAM //</h2>
+    <h2 class="text-sm font-bold text-amber-400 mb-1 tracking-wider break-words hyphens-auto">// GALACTIC_NEWS_STREAM //</h2>
     <div class="data-feed">
       <%= if Enum.empty?(@events) do %>
         <p class="text-slate-600 italic animate-pulse">[Awaiting GNN transmissions...]</p>
@@ -56,7 +64,7 @@
 
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
     <div class="lg:col-span-2 content-panel border-color-purple">
-      <h2 class="section-header text-purple-400 border-purple-500">// PLANETARY_COMMAND_INTERFACE //</h2>
+      <h2 class="section-header text-purple-400 border-purple-500 break-words hyphens-auto">// PLANETARY_COMMAND_INTERFACE //</h2>
 
       <div class="planets-list space-y-2.5 max-h-[calc(100vh-420px)] min-h-[200px] overflow-y-auto pr-1 custom-scrollbar">
         <%= if Enum.empty?(@planets) do %>
@@ -100,7 +108,7 @@
 
       <%= if length(@available_planets) > 0 do %>
         <div class="mt-3 pt-2.5 border-t-2 border-slate-700/50">
-          <h3 class="text-sm font-semibold text-yellow-300 mb-1.5 tracking-wider">// UNCHARTED_WORLDS_FOR_ACQUISITION //</h3>
+          <h3 class="text-sm font-semibold text-yellow-300 mb-1.5 tracking-wider break-words hyphens-auto">// UNCHARTED_WORLDS_FOR_ACQUISITION //</h3>
           <div class="available-planets mt-1.5 space-y-1.5">
             <%= for planet <- @available_planets do %>
               <div class="planet-item bg-slate-800/60 border border-slate-700 p-1.5 flex justify-between items-center hover:bg-slate-700/80 transition-colors duration-100">
@@ -120,7 +128,7 @@
 
     <div class="space-y-5">
       <div class="content-panel border-color-yellow">
-        <h2 class="section-header text-yellow-400 border-yellow-500">// GALACTIC_COMMODITIES_EXCHANGE //</h2>
+        <h2 class="section-header text-yellow-400 border-yellow-500 break-words hyphens-auto">// GALACTIC_COMMODITIES_EXCHANGE //</h2>
         <div class="resource-market space-y-1.5 text-xs max-h-52 overflow-y-auto pr-1 custom-scrollbar">
           <%= for {resource, data} <- @market do %>
             <div class="market-item bg-slate-900/70 border border-slate-700 p-1.5 hover:border-yellow-500/70">
@@ -153,7 +161,7 @@
       </div>
 
       <div class="content-panel border-color-sky">
-        <h2 class="section-header text-sky-400 border-sky-500">// XENOTECH_R&D_LAB //</h2>
+        <h2 class="section-header text-sky-400 border-sky-500 break-words hyphens-auto">// XENOTECH_R&D_LAB //</h2>
         <div class="upgrades space-y-1.5 max-h-52 overflow-y-auto pr-1 custom-scrollbar">
            <%= if Enum.empty?(@available_upgrades) do %>
               <p class="text-slate-500 italic p-2 text-xs text-center">All schematics acquired or research offline.</p>
@@ -174,4 +182,5 @@
       </div>
     </div>
   </div>
+</div>
 </div>
