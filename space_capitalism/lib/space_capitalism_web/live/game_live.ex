@@ -4,6 +4,7 @@ defmodule SpaceCapitalismWeb.GameLive do
 
   import SpaceCapitalismWeb.GameComponents
   import ResourceSupervisor
+  import StockMarket
 
   @impl true
   def mount(_params, _session, socket) do
@@ -15,6 +16,7 @@ defmodule SpaceCapitalismWeb.GameLive do
         total_robots: 10,
         maintenance_cost: 100,
         tax_timer: 5,
+        sell_amounts: %{},
 
         # Initial planet (Mars with Iron)
         planets: [
@@ -53,13 +55,7 @@ defmodule SpaceCapitalismWeb.GameLive do
         ],
 
         # Market prices
-        market: %{
-          "Iron" => %{price: 10, trend: 1},
-          "Gold" => %{price: 50, trend: -1},
-          "Uranium" => %{price: 100, trend: 1},
-          "Plutonium" => %{price: 200, trend: -1},
-          "Hasheidium" => %{price: 500, trend: 1}
-        },
+        market: StockMarket.get_prices(),
 
         # Available technology upgrades
         available_upgrades: [
@@ -125,6 +121,16 @@ def handle_info(:updateDisplay, socket) do
   # Return the updated socket
   {:noreply, socket}
 end
+
+def handle_event("sell_resource", %{"resource" => resource, "quantity" => quantity}, socket) do
+  if resource == "" or quantity == "" do
+    IO.puts("Must not ne empty")
+    {:noreply, socket}
+  else
+    StockMarket.sell(String.to_atom(resource), String.to_integer(quantity))
+    {:noreply, socket}
+  end
+end
   @doc """
   # Handle production tick
   @impl true
@@ -136,7 +142,7 @@ end
           Map.update!(acc, :iron, &(&1 + planet.production_rate / 60))
         "Gold (Or)" ->
           Map.update!(acc, :gold, &(&1 + planet.production_rate / 60))
-        "Uranium (Ur)" ->
+        "Uraniu (Ur)" ->
           Map.update!(acc, :uranium, &(&1 + planet.production_rate / 60))
         "Plutonium (Pu)" ->
           Map.update!(acc, :plutonium, &(&1 + planet.production_rate / 60))

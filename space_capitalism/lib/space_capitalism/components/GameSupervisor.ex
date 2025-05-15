@@ -9,7 +9,8 @@ defmodule GameSupervisor do
   def init(_) do
     children = [
       ResourceSupervisor,
-      PlanetSupervisor
+      PlanetSupervisor,
+      StockMarket
     ]
 
     Supervisor.init(children, strategy: :one_for_one)

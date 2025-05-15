@@ -134,25 +134,23 @@
             <div class="market-item bg-slate-900/70 border border-slate-700 p-1.5 hover:border-yellow-500/70">
               <div class="flex justify-between items-center mb-1">
                 <span class="text-slate-200 uppercase font-semibold"><%= resource %></span>
-                <span class={"font-bold " <> if data.trend > 0, do: "text-green-400", else: "text-red-400"}>
+                <span class={"font-bold " <> if data.trend > 0, do: "text-green-400", else: (if data.trend < 0, do: "text-red-400", else: "text-white-400")}>
                   <%= data.price %> $dG
-                  <%= if data.trend > 0 do %>▲<% else %>▼<% end %>
+                  <%= case data.trend do %>
+                    <% 1 -> %>▲
+                    <% -1 -> %>▼
+                    <% 0 -> %>=
+                  <% end %>
                 </span>
               </div>
               <div class="mt-1 flex flex-wrap gap-1.5 justify-between">
                 <div class="flex items-center space-x-1">
-                   <label for={"sell-#{resource}"} class="sr-only">Sell <%= resource %></label>
-                  <input type="number" name={"sell_amount_#{resource}"} id={"sell-#{resource}"} min="0" max={Map.get(@resources, String.to_atom(String.downcase(resource)))} class="input-pixel w-12" placeholder="QTY"/>
-                  <button phx-click="sell_resource" phx-value-resource={resource} phx-target={["#sell-#{resource}"]} class="pixel-button pixel-button-yellow text-[0.6rem] px-1.5 py-1">
-                    SELL
-                  </button>
-                </div>
-                <div class="flex items-center space-x-1">
-                  <label for={"buy-#{resource}"} class="sr-only">Buy <%= resource %></label>
-                  <input type="number" name={"buy_amount_#{resource}"} id={"buy-#{resource}"} min="0" class="input-pixel w-12" placeholder="QTY"/>
-                  <button phx-click="buy_resource" phx-value-resource={resource} phx-target={["#buy-#{resource}"]} class="pixel-button pixel-button-blue text-[0.6rem] px-1.5 py-1">
-                    BUY
-                  </button>
+                  <form phx-submit="sell_resource">
+                    <label for={"sell-#{resource}"} class="sr-only">Sell <%= resource %></label>
+                    <input type="number" name={"quantity"} id={"sell-#{resource}"} min="0" max={Map.get(@resources, resource)} class="input-pixel w-12" placeholder="QTY"/>
+                    <input type="hidden" name={"resource"} value={"#{resource}"}/>
+                    <input type="submit" value="SELL" class="pixel-button pixel-button-yellow text-[0.6rem] px-1.5 py-1"/>
+                  </form>
                 </div>
               </div>
             </div>
