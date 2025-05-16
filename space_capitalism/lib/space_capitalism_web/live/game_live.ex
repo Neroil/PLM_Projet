@@ -79,7 +79,14 @@ defmodule SpaceCapitalismWeb.GameLive do
         events: [
           %{message: "Welcome to Space Capitalism! You start with 10,000 $dG and 500 iron."},
           %{message: "Your first tax payment will be due in 5 minutes."}
-        ]
+        ],
+
+        # Process monitoring
+        process_count: Process.list() |> length(),
+        # MB
+        memory_usage: :erlang.memory() |> Keyword.get(:total) |> div(1024 * 1024),
+        vm_stats: get_vm_stats(),
+        vm_stats_minimized: false
       )
 
     # Start timers for production and events
@@ -103,7 +110,89 @@ defmodule SpaceCapitalismWeb.GameLive do
     # Start the function to update display
     :timer.send_interval(200, self(), :updateDisplay)
 
+    # Enable scheduler utilization tracking
+    :erlang.system_flag(:scheduler_wall_time, true)
+
+    # Start VM stats update timer
+    :timer.send_interval(1000, self(), :update_vm_stats)
+
     {:ok, socket}
+  end
+
+  @impl true
+  def handle_info(:update_vm_stats, socket) do
+    # Update VM stats
+    updated_stats = get_vm_stats()
+
+    # Assign the updated stats to the socket
+    {:noreply, assign(socket, :vm_stats, updated_stats)}
+  end
+
+  defp format_number(number) when is_integer(number) do
+  cond do
+    number >= 1_000_000 -> "#{div(number, 1_000_000)}M"
+    number >= 1_000 -> "#{div(number, 1_000)}K"
+    true -> "#{number}"
+  end
+end
+
+# Handle floats
+defp format_number(number) when is_float(number) do
+  number = round(number)
+  format_number(number)
+end
+
+# Handle values that are already strings
+defp format_number(number) when is_binary(number) do
+  number
+end
+
+# Fallback for any other types
+defp format_number(_) do
+  "N/A"
+end
+
+  defp get_vm_stats do
+  %{
+    process_count: Process.list() |> length(),
+    process_limit: :erlang.system_info(:process_limit) |> format_number(),
+    # MB
+    memory_usage: "#{:erlang.memory() |> Keyword.get(:total) |> div(1024 * 1024)} MB",
+    reduction_count: :erlang.statistics(:reductions) |> elem(0) |> format_number(),
+    run_queue: :erlang.statistics(:run_queue),
+    # More reliable activity indicators
+    reductions_per_second: get_reductions_per_second() |> format_number(),
+    # Number of schedulers (OS threads)
+    scheduler_count: :erlang.system_info(:schedulers_online),
+    atom_count: :erlang.system_info(:atom_count) |> format_number(),
+    # Garbage collection info
+    gc_count: :erlang.statistics(:garbage_collection) |> elem(0) |> format_number(),
+    # Message queue activity
+    io_activity: :erlang.statistics(:io) |> elem(0) |> elem(0) |> format_number()
+  }
+end
+
+  defp get_reductions_per_second do
+    current_time = :erlang.monotonic_time(:millisecond)
+    {current_reductions, _} = :erlang.statistics(:reductions)
+
+    # Store previous values
+    {prev_reductions, prev_time} =
+      Process.get(:prev_reductions_stats, {current_reductions, current_time})
+
+    Process.put(:prev_reductions_stats, {current_reductions, current_time})
+
+    # Calculate reductions per second
+    time_diff = current_time - prev_time
+    reduction_diff = current_reductions - prev_reductions
+
+    if time_diff > 0 do
+      reductions_per_ms = reduction_diff / time_diff
+      reductions_per_second = reductions_per_ms * 1000
+      round(reductions_per_second)
+    else
+      0
+    end
   end
 
   def handle_info(:updateDisplayOnClick, socket) do
@@ -162,14 +251,19 @@ defmodule SpaceCapitalismWeb.GameLive do
     {:noreply, socket}
   end
 
-def handle_event("sell_resource", %{"resource" => resource, "quantity" => quantity}, socket) do
-  if resource == "" or quantity == "" do
-    IO.puts("Must not ne empty")
-    {:noreply, socket}
-  else
-    StockMarket.sell(String.to_atom(resource), String.to_integer(quantity))
-    {:noreply, socket}
+  def handle_event("sell_resource", %{"resource" => resource, "quantity" => quantity}, socket) do
+    if resource == "" or quantity == "" do
+      IO.puts("Must not ne empty")
+      {:noreply, socket}
+    else
+      StockMarket.sell(String.to_atom(resource), String.to_integer(quantity))
+      {:noreply, socket}
+    end
   end
+
+  @impl true
+def handle_event("toggle_vm_stats", _params, socket) do
+  {:noreply, assign(socket, :vm_stats_minimized, !socket.assigns.vm_stats_minimized)}
 end
 
   @doc """
@@ -350,52 +444,10 @@ end
   # Handle events from UI
   @impl true
   def handle_event("add_robot", %{"planet" => planet_id}, socket) do
-    # Testing Guillaume's functions
-    Planet.add_robot(:mars, 1)
-    # Planet.get_resource(:mars)
+    PlanetSupervisor.addRobot(planet_id, 1)
+    # Update the planets list
+    send(self(), :updateDisplayOnClick)
 
-    # # Find the planet
-    # planet_index = Enum.find_index(socket.assigns.planets, &(&1.id == planet_id))
-
-    # if planet_index do
-    #   planet = Enum.at(socket.assigns.planets, planet_index)
-
-    #   # Check if player can afford the robot
-    #   if socket.assigns.resources.money >= planet.robot_cost do
-    #     # Update money
-    #     new_resources = Map.update!(socket.assigns.resources, :money, &(&1 - planet.robot_cost))
-
-    #     # Update planet robots
-    #     updated_planet = Map.update!(planet, :robots, &(&1 + 1))
-    #     # Update production rate based on new robot count
-    #     updated_planet = Map.update!(updated_planet, :production_rate, fn rate ->
-    #       # Each robot produces a base amount per minute
-    #       base_rate_per_robot = 2
-    #       updated_planet.robots * base_rate_per_robot
-    #     end)
-
-    #     # Update planets list
-    #     new_planets = List.replace_at(socket.assigns.planets, planet_index, updated_planet)
-
-    #     # Update total robot count
-    #     new_total = socket.assigns.total_robots + 1
-
-    #     # Update maintenance cost
-    #     new_maintenance = new_total * 10  # 10 $dG per robot
-
-    #     socket = socket
-    #       |> assign(:resources, new_resources)
-    #       |> assign(:planets, new_planets)
-    #       |> assign(:total_robots, new_total)
-    #       |> assign(:maintenance_cost, new_maintenance)
-
-    #     {:noreply, socket}
-    #   else
-    #     {:noreply, put_flash(socket, :error, "Not enough money to buy robot!")}
-    #   end
-    # else
-    #   {:noreply, socket}
-    # end
     {:noreply, socket}
   end
 
