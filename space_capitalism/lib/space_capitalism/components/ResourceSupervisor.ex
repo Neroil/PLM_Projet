@@ -13,9 +13,9 @@ defmodule ResourceSupervisor do
   def setInitialResources(res) do
     # Set intial resources for the game
     case res do
-      :iron -> 500
-      :dG -> 100000000
-      :crypto1 -> 1000
+      :iron -> 5
+      :dG -> 100
+      :crypto1 -> 10
       _ -> 0
     end
   end

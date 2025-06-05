@@ -10,15 +10,15 @@ defmodule PlanetSupervisor do
   def getPlanets() do
     [
       {:mars, 0, :iron, 100, 100, true},
-      {:proxima, 5000, :gold, 150, 120, false},
-      {:barnard, 8000, :iron, 200, 150, false},
-      {:struve, 15000, :uranium, 250, 180, false},
-      {:gui_ed, 25000, :gold, 300, 200, false},
-      {:toi, 40000, :plutonium, 400, 250, false},
-      {:trivia, 65000, :uranium, 500, 300, false},
-      {:ze_bi, 100_000, :plutonium, 650, 350, false},
-      {:yver_dion, 160_000, :hasheidium, 800, 400, false},
-      {:ches_om, 250_000, :hasheidium, 1000, 500, false}
+      {:proxima, 5_000, :gold, 500, 120, false},
+      {:barnard, 15_000, :iron, 1_000, 150, false},
+      {:struve, 25_000, :uranium, 5_000, 180, false},
+      {:gui_ed, 100_000, :gold, 20_000, 200, false},
+      {:toi, 400_000, :plutonium, 50_000, 250, false},
+      {:trivia, 750_000, :uranium, 100_000, 300, false},
+      {:ze_bi, 1_200_000, :plutonium, 150_000, 350, false},
+      {:yver_dion, 3_000_000, :hasheidium, 300_000, 400, false},
+      {:ches_om, 10_000_000, :hasheidium, 500_000, 500, false}
     ]
   end
 

@@ -7,13 +7,13 @@ defmodule StockMarket do
   def start_link(_) do
     prices = %{
       iron: %{price: 10, trend: 0},
-      gold: %{price: 10, trend: 0},
-      uranium: %{price: 10, trend: 0},
-      plutonium: %{price: 10, trend: 0},
-      hasheidium: %{price: 10, trend: 0},
+      gold: %{price: 200, trend: 0},
+      uranium: %{price: 500, trend: 0},
+      plutonium: %{price: 2000, trend: 0},
+      hasheidium: %{price: 5000, trend: 0},
       crypto1: %{price: 10, trend: 0},
-      crypto2: %{price: 10, trend: 0},
-      crypto3: %{price: 10, trend: 0},
+      crypto2: %{price: 100, trend: 0},
+      crypto3: %{price: 1000, trend: 0},
     }
 
     GenServer.start_link(__MODULE__, prices, name: __MODULE__)
