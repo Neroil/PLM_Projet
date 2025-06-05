@@ -172,6 +172,16 @@ def handle_event("sell_resource", %{"resource" => resource, "quantity" => quanti
   end
 end
 
+def handle_event("buy_resource", %{"resource" => resource, "quantity" => quantity}, socket) do
+  if resource == "" or quantity == "" do
+    IO.puts("Must not ne empty")
+    {:noreply, socket}
+  else
+    StockMarket.buy(String.to_atom(resource), String.to_integer(quantity))
+    {:noreply, socket}
+  end
+end
+
   @impl true
   def handle_event("buy_planet", %{"planet" => planet_name}, socket) do
     case PlanetSupervisor.buyPlanet(planet_name) do

@@ -26,6 +26,9 @@
           <div class="flex justify-between"><span>Uranium (Ur):</span> <span class="text-slate-100"><%= @resources.uranium %></span></div>
           <div class="flex justify-between"><span>Plutonium (Pu):</span> <span class="text-slate-100"><%= @resources.plutonium %></span></div>
           <div class="flex justify-between"><span>Hasheidium (Hu):</span> <span class="text-slate-100"><%= @resources.hasheidium %></span></div>
+          <div class="flex justify-between"><span>Crypto1 :</span> <span class="text-slate-100"><%= @resources.crypto1 %></span></div>
+          <div class="flex justify-between"><span>Crypto2 :</span> <span class="text-slate-100"><%= @resources.crypto2 %></span></div>
+          <div class="flex justify-between"><span>Crypto3 :</span> <span class="text-slate-100"><%= @resources.crypto3 %></span></div>
         </div>
       </div>
 
@@ -167,9 +170,15 @@
                 <div class="flex items-center space-x-1">
                   <form phx-submit="sell_resource">
                     <label for={"sell-#{resource}"} class="sr-only">Sell <%= resource %></label>
-                    <input type="number" name={"quantity"} id={"sell-#{resource}"} min="0" max={Map.get(@resources, resource)} class="input-pixel w-12" placeholder="QTY"/>
+                    <input type="number" name={"quantity"} id={"sell-#{resource}"} min="1" max={Map.get(@resources, resource)} class="input-pixel w-12" placeholder="QTY"/>
                     <input type="hidden" name={"resource"} value={"#{resource}"}/>
                     <input type="submit" value="SELL" class="pixel-button pixel-button-yellow text-[0.6rem] px-1.5 py-1"/>
+                  </form>
+                  <form phx-submit="buy_resource">
+                    <label for={"buy-#{resource}"} class="sr-only">Sell <%= resource %></label>
+                    <input type="number" name={"quantity"} id={"buy-#{resource}"} min="1" class="input-pixel w-12" placeholder="QTY"/>
+                    <input type="hidden" name={"resource"} value={"#{resource}"}/>
+                    <input type="submit" value="BUY" class="pixel-button pixel-button-yellow text-[0.6rem] px-1.5 py-1"/>
                   </form>
                 </div>
               </div>

@@ -29,6 +29,10 @@ defmodule StockMarket do
     GenServer.cast(__MODULE__, {:sell, resource, quantity})
   end
 
+  def buy(resource, quantity) do
+    GenServer.cast(__MODULE__, {:buy, resource, quantity})
+  end
+
   def update(resource, difference) do
     GenServer.cast(__MODULE__, {:update, resource, difference})
   end
@@ -50,6 +54,15 @@ defmodule StockMarket do
     case Resource.remove(resource, quantity) do
       {:ok, _} -> Resource.add(:dG, quantity * state[resource][:price])
       {:error, _} -> IO.puts("Not enough #{resource}")
+    end
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_cast({:buy, resource, quantity}, state) do
+    case Resource.remove(:dG, quantity * state[resource][:price]) do
+      {:ok, _} -> Resource.add(resource, quantity)
+      {:error, _} -> IO.puts("Not enough money")
     end
     {:noreply, state}
   end

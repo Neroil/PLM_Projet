@@ -96,10 +96,6 @@ defmodule Planet do
     GenServer.cast(via_tuple(name), :upgrade)
   end
 
-  def get_robots(name) do
-    GenServer.call(via_tuple(name), :get_robots)
-  end
-
   def get_cost(name) do
     GenServer.call(via_tuple(name), :get_cost)
   end
