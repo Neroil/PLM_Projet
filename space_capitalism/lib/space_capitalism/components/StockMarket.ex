@@ -19,7 +19,7 @@ defmodule StockMarket do
     GenServer.start_link(__MODULE__, prices, name: __MODULE__)
   end
 
-   @impl true
+  @impl true
   def init(state) do
     Process.send_after(self(), :randomizePrices, 2000)
     {:ok, state}

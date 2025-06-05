@@ -89,24 +89,6 @@ defmodule SpaceCapitalismWeb.GameLive do
         vm_stats_minimized: false
       )
 
-    # Start timers for production and events
-    # if connected?(socket) do
-    #   # Production timer - every second
-    #   :timer.send_interval(1000, self(), :tick_production)
-
-    #   # Market update timer - every 30 seconds
-    #   :timer.send_interval(30000, self(), :update_market)
-
-    #   # Event timer - random event every 2 minutes
-    #   :timer.send_interval(120000, self(), :random_event)
-
-    #   # Tax timer - every 5 minutes
-    #   :timer.send_interval(300000, self(), :collect_taxes)
-
-    #   # Subscribe to game events
-    #   PubSub.subscribe(SpaceCapitalism.PubSub, "game_events")
-    # end
-
     # Start the function to update display
     :timer.send_interval(200, self(), :updateDisplay)
 
@@ -129,12 +111,12 @@ defmodule SpaceCapitalismWeb.GameLive do
   end
 
   defp format_number(number) when is_integer(number) do
-  cond do
-    number >= 1_000_000 -> "#{div(number, 1_000_000)}M"
-    number >= 1_000 -> "#{div(number, 1_000)}K"
-    true -> "#{number}"
+    cond do
+      number >= 1_000_000 -> "#{div(number, 1_000_000)}M"
+      number >= 1_000 -> "#{div(number, 1_000)}K"
+      true -> "#{number}"
+    end
   end
-end
 
 # Handle floats
 defp format_number(number) when is_float(number) do

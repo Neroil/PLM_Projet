@@ -30,4 +30,22 @@ defmodule Resource do
       end
     end)
   end
+
+  #Enlève au plus amount, sinon set le nombre à 0
+  def safe_remove(name, amount) do
+    Agent.update(name, fn count ->
+      if count < amount do
+        0
+      else
+        count - amount
+      end
+    end)
+  end
+
+  # Modifie la resource de {percentage} %
+  def modify(name, percentage) do
+    Agent.update(name, fn count ->
+      count + round(count*percentage)
+    end)
+  end
 end

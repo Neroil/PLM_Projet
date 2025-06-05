@@ -23,7 +23,7 @@ defmodule PlanetSupervisor do
   end
 
   def getAllOwnedPlanets() do
-    Enum.filter(getPlanets(), fn {_name, _resource_type, _base_cost, _base_production, is_owned} ->
+    Enum.filter(getPlanets(), fn {_name, _cost, _resource_type, _base_cost, _base_production, is_owned} ->
       is_owned
     end)
   end

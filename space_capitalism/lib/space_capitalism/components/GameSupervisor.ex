@@ -10,7 +10,8 @@ defmodule GameSupervisor do
     children = [
       ResourceSupervisor,
       PlanetSupervisor,
-      StockMarket
+      StockMarket,
+      RandomEventManager
     ]
 
     Supervisor.init(children, strategy: :one_for_one)

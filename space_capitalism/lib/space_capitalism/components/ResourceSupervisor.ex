@@ -25,6 +25,10 @@ defmodule ResourceSupervisor do
     Resource.add(:robot_maintenance_cost, maintenance_cost * nbOfWorker)
   end
 
+  def remove_worker(count) do
+    Resource.safe_remove(:robot, count)
+  end
+
   def applyMaintenanceCost() do
     # Apply the maintenance cost of the robots
     maintenance_cost = Resource.get(:robot_maintenance_cost)

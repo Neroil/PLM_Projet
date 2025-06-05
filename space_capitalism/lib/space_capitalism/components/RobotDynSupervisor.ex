@@ -23,4 +23,15 @@ defmodule RobotDynSupervisor do
     ResourceSupervisor.addWorker(count, maintenance_cost)
   end
 
+  def remove_worker(planet, count) do
+    children = DynamicSupervisor.which_children(planet)
+      |> Enum.take(count)
+
+    for {_, pid, _, _} <- children do
+      DynamicSupervisor.terminate_child(planet, pid)
+    end
+
+    ResourceSupervisor.remove_worker(count)
+  end
+
 end
