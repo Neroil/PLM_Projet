@@ -1,4 +1,5 @@
 defmodule PlanetSupervisor do
+  alias ElixirSense.Log
   use Supervisor
 
   def start_link(_) do
@@ -49,18 +50,26 @@ defmodule PlanetSupervisor do
     |> Enum.into(%{})
   end
 
+  #Helper function to get a planet by its name
+  def getAtom(string) do
+    # Convert planet_id into atom
+    id =
+      if is_binary(string), do: String.to_existing_atom(string), else: string
+  end
+
   def addRobot(planet_id, count \\ 1) do
-    Planet.add_robot(planet_id, count)
+    # Cast to atom if string
+    Planet.add_robot(getAtom(planet_id), count)
+    IO.puts("Added #{count} robots to planet #{getAtom(planet_id)}")
   end
 
   def upgradePlanet(planet_id) do
-    Planet.upgrade(planet_id)
+    Planet.upgrade(getAtom(planet_id))
   end
 
   def buyPlanet(planet_string) do
     # Convert planet_id into atom
-    planet_id =
-      if is_binary(planet_string), do: String.to_existing_atom(planet_string), else: planet_string
+    planet_id = getAtom(planet_string)
 
     # Check if planet exists
     case Enum.find(getPlanets(), fn {name, _, _, _, _, _} -> name == planet_id end) do

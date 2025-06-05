@@ -416,3 +416,16 @@ body {
     transform: translateX(100vw);
   }
 }
+
+.system-monitor {
+  box-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
+  font-family: "Space Mono", monospace;
+  backdrop-filter: blur(5px);
+  animation: pulse 5s infinite alternate;
+  z-index: 100;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 15px rgba(6, 182, 212, 0.4); }
+  100% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.6); }
+}
