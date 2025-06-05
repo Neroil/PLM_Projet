@@ -157,6 +157,7 @@ defmodule SpaceCapitalismWeb.GameLive do
     socket =
       socket
       |> assign(:resources, ResourceSupervisor.getAllResources())
+      |> assign(:market, StockMarket.get_prices())
 
     # Return the updated socket
     {:noreply, socket}

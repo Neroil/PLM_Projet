@@ -7,8 +7,8 @@ defmodule StockMarket do
   def start_link(_) do
     prices = %{
       iron: %{price: 10, trend: 0},
-      gold: %{price: 10, trend: 1},
-      uranium: %{price: 10, trend: -1},
+      gold: %{price: 10, trend: 0},
+      uranium: %{price: 10, trend: 0},
       plutonium: %{price: 10, trend: 0},
       hasheidium: %{price: 10, trend: 0},
       crypto1: %{price: 10, trend: 0},
@@ -16,12 +16,16 @@ defmodule StockMarket do
       crypto3: %{price: 10, trend: 0},
     }
 
-    IO.puts(__MODULE__)
     GenServer.start_link(__MODULE__, prices, name: __MODULE__)
   end
 
+   @impl true
+  def init(state) do
+    Process.send_after(self(), :randomizePrices, 2000)
+    {:ok, state}
+  end
+
   def get_prices() do
-    IO.puts("get_prices")
     GenServer.call(__MODULE__, :get_prices)
   end
 
@@ -45,7 +49,7 @@ defmodule StockMarket do
   @impl true
   def handle_cast({:update, resource, difference}, state) do
     trend = if difference > 0, do: 1, else: -1
-    new_state = Map.put(state, resource, {state[resource][:price] + difference, trend})
+    new_state = Map.put(state, resource, %{price: state[resource][:price] + difference, trend: trend})
     {:noreply, new_state}
   end
 
@@ -64,6 +68,30 @@ defmodule StockMarket do
       {:ok, _} -> Resource.add(resource, quantity)
       {:error, _} -> IO.puts("Not enough money")
     end
+    {:noreply, state}
+  end
+
+  defp generateNewPrice(actualPrice) do
+    newVal = Enum.random(0..200) - 100
+    if actualPrice + newVal > 0 do
+      newVal
+    else
+      actualPrice - 1
+    end
+
+  end
+
+  defp generateRandomTime() do
+    Enum.random(10..45) * 1000
+  end
+
+  @impl true
+  def handle_info(:randomizePrices, state) do
+    for res <- Map.keys(state), do:
+      update(res, generateNewPrice(state[res][:price]))
+
+    # Continue la boucle
+    Process.send_after(self(), :randomizePrices, generateRandomTime())
     {:noreply, state}
   end
 end
