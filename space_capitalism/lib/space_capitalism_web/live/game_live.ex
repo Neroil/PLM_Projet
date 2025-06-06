@@ -3,42 +3,9 @@ defmodule SpaceCapitalismWeb.GameLive do
   alias Phoenix.PubSub
 
   import SpaceCapitalismWeb.GameComponents
-
   @impl true
   def mount(_params, _session, socket) do
-    all_planets = PlanetSupervisor.getAllPlanets()
-
-    owned_planets =
-      all_planets
-      |> Map.values()
-      |> Enum.filter(fn planet -> planet.owned end)
-      |> Enum.map(fn planet ->
-        # Format the planet for display
-        %{
-          id: planet.id,
-          name: planet.name,
-          resource_type: planet.resource_type,
-          robots: planet.robots,
-          production_rate: planet.production_rate,
-          robot_cost: planet.robot_cost,
-          upgrade_cost: planet.upgrade_cost
-        }
-      end)
-
-    available_planets =
-      all_planets
-      |> Map.values()
-      |> Enum.filter(fn planet -> !planet.owned end)
-      |> Enum.map(fn planet ->
-        # Format available planets for display
-        %{
-          id: planet.id,
-          name: planet.name,
-          resource_type: planet.resource_type,
-          cost: planet.cost
-        }
-      end)
-      |> Enum.sort_by(& &1.cost, :asc)
+    {owned_planets, available_planets} = fetch_and_format_planets()
 
     # Initialize game state
     socket =
@@ -46,11 +13,13 @@ defmodule SpaceCapitalismWeb.GameLive do
         page_title: "Space Capitalism",
         resources: ResourceSupervisor.getAllResources(),
         planets: owned_planets,
-        available_planets: available_planets,        # Market prices
+        # Market prices
+        available_planets: available_planets,
         market: StockMarket.get_prices(),
 
         # Available technology upgrades - get from GameSupervisor
-        available_upgrades: GameSupervisor.getUpgrades()
+        available_upgrades:
+          GameSupervisor.getUpgrades()
           |> Enum.map(fn {id, upgrade} ->
             Map.put(upgrade, :id, id)
           end)
@@ -200,96 +169,20 @@ defmodule SpaceCapitalismWeb.GameLive do
   end
 
   def handle_info(:updateDisplayOnClick, socket) do
-    # Get all planets from the supervisor
-    all_planets = PlanetSupervisor.getAllPlanets()
-
-    # Update owned planets
-    owned_planets =
-      all_planets
-      |> Map.values()
-      |> Enum.filter(fn planet -> planet.owned end)
-      |> Enum.map(fn planet ->
-        %{
-          id: planet.id,
-          name: planet.name,
-          resource_type: planet.resource_type,
-          robots: planet.robots,
-          production_rate: planet.production_rate,
-          robot_cost: planet.robot_cost,
-          upgrade_cost: planet.upgrade_cost
-        }
-      end)
-
-    # Update non owned planets
-    available_planets =
-      all_planets
-      |> Map.values()
-      |> Enum.filter(fn planet -> !planet.owned end)
-      |> Enum.map(fn planet ->
-        %{
-          id: planet.id,
-          name: planet.name,
-          resource_type: planet.resource_type,
-          cost: planet.cost
-        }
-      end)
-
-    # Update resources and assign to socket
     updated_socket =
       socket
       |> assign(:resources, ResourceSupervisor.getAllResources())
-      |> assign(:planets, owned_planets)
-      |> assign(:available_planets, available_planets)
+      |> update_planets_in_socket()
 
-    # Return the updated socket
     {:noreply, updated_socket}
   end
 
   def handle_info(:updateDisplay, socket) do
-    # Update resources and market data
     socket =
       socket
       |> assign(:resources, ResourceSupervisor.getAllResources())
       |> assign(:market, StockMarket.get_prices())
-
-    # Also update planet data to reflect backend state changes (e.g., from random events)
-    all_planets = PlanetSupervisor.getAllPlanets()
-
-    # Update owned planets
-    owned_planets =
-      all_planets
-      |> Map.values()
-      |> Enum.filter(fn planet -> planet.owned end)
-      |> Enum.map(fn planet ->
-        %{
-          id: planet.id,
-          name: planet.name,
-          resource_type: planet.resource_type,
-          robots: planet.robots,
-          production_rate: planet.production_rate,
-          robot_cost: planet.robot_cost,
-          upgrade_cost: planet.upgrade_cost
-        }
-      end)
-
-    # Update available planets
-    available_planets =
-      all_planets
-      |> Map.values()
-      |> Enum.filter(fn planet -> !planet.owned end)
-      |> Enum.map(fn planet ->
-        %{
-          id: planet.id,
-          name: planet.name,
-          resource_type: planet.resource_type,
-          cost: planet.cost
-        }
-      end)
-
-    socket =
-      socket
-      |> assign(:planets, owned_planets)
-      |> assign(:available_planets, available_planets)
+      |> update_planets_in_socket()
       |> assign(:tax_countdown, EventManager.get_next_tax_countdown())
 
     {:noreply, socket}
@@ -297,20 +190,12 @@ defmodule SpaceCapitalismWeb.GameLive do
 
   @impl true
   def handle_event("sell_form_change", %{"quantity" => quantity, "resource" => resource}, socket) do
-    # Store the sell form value in socket state
-    form_key = "#{resource}_sell_quantity"
-    new_form_values = Map.put(socket.assigns.form_values, form_key, quantity)
-
-    {:noreply, assign(socket, :form_values, new_form_values)}
+    handle_form_change(quantity, resource, socket, "sell")
   end
 
   @impl true
   def handle_event("buy_form_change", %{"quantity" => quantity, "resource" => resource}, socket) do
-    # Store the buy form value in socket state
-    form_key = "#{resource}_buy_quantity"
-    new_form_values = Map.put(socket.assigns.form_values, form_key, quantity)
-
-    {:noreply, assign(socket, :form_values, new_form_values)}
+    handle_form_change(quantity, resource, socket, "buy")
   end
 
   @impl true
@@ -325,6 +210,7 @@ defmodule SpaceCapitalismWeb.GameLive do
   def handle_event("sell_resource", %{"resource" => resource, "quantity" => quantity}, socket) do
     handle_resource_transaction(resource, quantity, socket, true)
   end
+
   # Private function to handle both buying and selling resources
   defp handle_resource_transaction(resource, quantity, socket, is_selling) do
     if resource == "" or quantity == "" do
@@ -337,11 +223,12 @@ defmodule SpaceCapitalismWeb.GameLive do
           {:noreply, put_flash(socket, :error, "Quantity must be greater than 0")}
         else
           # Perform the transaction
-          result = if is_selling do
-            StockMarket.sell(String.to_atom(resource), quantity_int)
-          else
-            StockMarket.buy(String.to_atom(resource), quantity_int)
-          end
+          result =
+            if is_selling do
+              StockMarket.sell(String.to_atom(resource), quantity_int)
+            else
+              StockMarket.buy(String.to_atom(resource), quantity_int)
+            end
 
           case result do
             {:ok, message} ->
@@ -371,19 +258,7 @@ defmodule SpaceCapitalismWeb.GameLive do
 
   @impl true
   def handle_event("buy_planet", %{"planet" => planet_name}, socket) do
-    case PlanetSupervisor.buyPlanet(planet_name) do
-      {:ok, message} ->
-        # Update the planets list
-        send(self(), :updateDisplayOnClick)
-        {:noreply, put_flash(socket, :info, message)}
-
-      {:error, reason} ->
-        {:noreply, put_flash(socket, :error, reason)}
-
-      # Fallback for any other response format
-      _ ->
-        {:noreply, socket}
-    end
+    handle_action_with_update(PlanetSupervisor.buyPlanet(planet_name), socket)
   end
 
   @impl true
@@ -395,20 +270,9 @@ defmodule SpaceCapitalismWeb.GameLive do
 
   @impl true
   def handle_event("add_robot", %{"planet" => planet_id}, socket) do
-    case Planet.add_robot(String.to_atom(planet_id), 1) do
-      {:ok, message} ->
-        # Update the planets list
-        send(self(), :updateDisplayOnClick)
-        {:noreply, put_flash(socket, :info, message)}
-
-      {:error, reason} ->
-        {:noreply, put_flash(socket, :error, reason)}
-
-      # Fallback for any other response format
-      _ ->
-        {:noreply, socket}
-    end
+    handle_action_with_update(Planet.add_robot(String.to_atom(planet_id), 1), socket)
   end
+
   # Upgrade events handler
   @impl true
   def handle_event("buy_upgrade", %{"upgrade" => upgrade_id}, socket) do
@@ -441,6 +305,80 @@ defmodule SpaceCapitalismWeb.GameLive do
     end
   end
 
+  # Helper functions for planet management
+  defp fetch_and_format_planets do
+    all_planets = PlanetSupervisor.getAllPlanets()
+    planets_list = Map.values(all_planets)
+
+    owned_planets = format_owned_planets(planets_list)
+    available_planets = format_available_planets(planets_list)
+
+    {owned_planets, available_planets}
+  end
+
+  defp format_owned_planets(planets_list) do
+    planets_list
+    |> Enum.filter(fn planet -> planet.owned end)
+    |> Enum.map(&format_owned_planet/1)
+  end
+
+  defp format_available_planets(planets_list) do
+    planets_list
+    |> Enum.filter(fn planet -> !planet.owned end)
+    |> Enum.map(&format_available_planet/1)
+    |> Enum.sort_by(& &1.cost, :asc)
+  end
+
+  defp format_owned_planet(planet) do
+    %{
+      id: planet.id,
+      name: planet.name,
+      resource_type: planet.resource_type,
+      robots: planet.robots,
+      production_rate: planet.production_rate,
+      robot_cost: planet.robot_cost,
+      upgrade_cost: planet.upgrade_cost
+    }
+  end
+
+  defp format_available_planet(planet) do
+    %{
+      id: planet.id,
+      name: planet.name,
+      resource_type: planet.resource_type,
+      cost: planet.cost
+    }
+  end
+
+  defp update_planets_in_socket(socket) do
+    {owned_planets, available_planets} = fetch_and_format_planets()
+
+    socket
+    |> assign(:planets, owned_planets)
+    |> assign(:available_planets, available_planets)
+  end
+
+  defp handle_form_change(quantity, resource, socket, form_type) do
+    form_key = "#{resource}_#{form_type}_quantity"
+    new_form_values = Map.put(socket.assigns.form_values, form_key, quantity)
+    {:noreply, assign(socket, :form_values, new_form_values)}
+  end
+
+  defp handle_action_with_update(action_result, socket, success_message_override \\ nil) do
+    case action_result do
+      {:ok, message} ->
+        final_message = success_message_override || message
+        send(self(), :updateDisplayOnClick)
+        {:noreply, put_flash(socket, :info, final_message)}
+
+      {:error, reason} ->
+        {:noreply, put_flash(socket, :error, reason)}
+
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
   # Utility functions for upgrade management
   defp get_upgrade_info(upgrade_id) do
     GameSupervisor.getUpgrade(upgrade_id)
@@ -456,5 +394,4 @@ defmodule SpaceCapitalismWeb.GameLive do
       upgrade -> Resource.get(:dG) >= upgrade.cost
     end
   end
-
 end
