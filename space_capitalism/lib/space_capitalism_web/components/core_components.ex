@@ -103,7 +103,6 @@ defmodule SpaceCapitalismWeb.CoreComponents do
   attr :kind, :atom, values: [:info, :error], doc: "used for styling and flash lookup"
   attr :rest, :global, doc: "the arbitrary HTML attributes to add to the flash container"
   slot :inner_block, doc: "the optional inner block that renders the flash message"
-
   def flash(assigns) do
     assigns = assign_new(assigns, :id, fn -> "flash-#{assigns.kind}" end)
 
@@ -112,9 +111,10 @@ defmodule SpaceCapitalismWeb.CoreComponents do
       :if={msg = render_slot(@inner_block) || Phoenix.Flash.get(@flash, @kind)}
       id={@id}
       phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
+      phx-mounted={JS.dispatch("flash:auto-hide", to: "##{@id}")}
       role="alert"
       class={[
-        "relative w-80 sm:w-96 rounded-lg p-3 ring-1 mb-2",
+        "relative w-80 sm:w-96 rounded-lg p-3 ring-1 mb-2 transition-opacity duration-500",
         @kind == :info && "bg-emerald-50 text-emerald-800 ring-emerald-500 fill-cyan-900",
         @kind == :error && "bg-rose-50 text-rose-900 shadow-md ring-rose-500 fill-rose-900"
       ]}

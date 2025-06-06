@@ -34,6 +34,23 @@ topbar.config({barColors: {0: "#29d"}, shadowColor: "rgba(0, 0, 0, .3)"})
 window.addEventListener("phx:page-loading-start", _info => topbar.show(300))
 window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
 
+// Flash message auto-hide functionality
+window.addEventListener("flash:auto-hide", (event) => {
+  const flashElement = event.target
+  setTimeout(() => {
+    if (flashElement && flashElement.parentNode) {
+      // Fade out the flash message
+      flashElement.style.opacity = "0"
+      
+      setTimeout(() => {
+        if (flashElement.parentNode) {
+          flashElement.click() 
+        }
+      }, 500) 
+    }
+  }, 5000) 
+})
+
 // connect if there are any LiveViews on the page
 liveSocket.connect()
 
