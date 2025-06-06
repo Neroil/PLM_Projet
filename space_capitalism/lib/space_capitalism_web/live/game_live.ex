@@ -46,7 +46,6 @@ defmodule SpaceCapitalismWeb.GameLive do
       assign(socket,
         page_title: "Space Capitalism",
         resources: ResourceSupervisor.getAllResources(),
-        tax_timer: 5,
         planets: owned_planets,
         available_planets: available_planets,
 
@@ -78,7 +77,10 @@ defmodule SpaceCapitalismWeb.GameLive do
         # Recent events
         events: [
           %{message: "Welcome to Space Capitalism! You start with 10,000 $dG and 500 iron."},
-          %{message: "Your first tax payment will be due in 5 minutes."}
+          %{
+            message:
+              "Intergalactic Tax Authority enabled. Auto-collection from extra-territorial holdings every 5 minutes."
+          }
         ],
 
         # Process monitoring
@@ -86,17 +88,20 @@ defmodule SpaceCapitalismWeb.GameLive do
         # MB
         memory_usage: :erlang.memory() |> Keyword.get(:total) |> div(1024 * 1024),
         vm_stats: get_vm_stats(),
-        vm_stats_minimized: false,
-
         # Form state to persist input values across re-renders
-        form_values: %{}
+        vm_stats_minimized: false,
+        form_values: %{},
+
+        # Tax countdown timer
+        tax_countdown: EventManager.get_next_tax_countdown()
       )
 
     # Start the function to update display
-    :timer.send_interval(200, self(), :updateDisplay)
-
     # Enable scheduler utilization tracking
-    :erlang.system_flag(:scheduler_wall_time, true)    # Start VM stats update timer
+    :timer.send_interval(200, self(), :updateDisplay)
+    :erlang.system_flag(:scheduler_wall_time, true)
+
+    # Start VM stats update timer
     :timer.send_interval(1000, self(), :update_vm_stats)
 
     # Subscribe to galactic events
@@ -104,6 +109,7 @@ defmodule SpaceCapitalismWeb.GameLive do
 
     {:ok, socket}
   end
+
   @impl true
   def handle_info(:update_vm_stats, socket) do
     # Update VM stats
@@ -113,18 +119,21 @@ defmodule SpaceCapitalismWeb.GameLive do
     {:noreply, assign(socket, :vm_stats, updated_stats)}
   end
 
-    @impl true
+  @impl true
   def handle_info({:galactic_event, event_message}, socket) do
     # Get current timestamp in galactic format
     timestamp = DateTime.utc_now() |> DateTime.to_time() |> Time.to_string() |> String.slice(0, 8)
 
     # Add the new event to the events list with timestamp, keeping only the latest 5
-    new_events = [
-      %{
-        message: event_message,
-        timestamp: timestamp
-      } | socket.assigns.events
-    ] |> Enum.take(5)
+    new_events =
+      [
+        %{
+          message: event_message,
+          timestamp: timestamp
+        }
+        | socket.assigns.events
+      ]
+      |> Enum.take(5)
 
     {:noreply, assign(socket, :events, new_events)}
   end
@@ -152,6 +161,15 @@ defmodule SpaceCapitalismWeb.GameLive do
   defp format_number(_) do
     "N/A"
   end
+
+  defp format_countdown(seconds) when is_integer(seconds) and seconds >= 0 do
+    minutes = div(seconds, 60)
+    remaining_seconds = rem(seconds, 60)
+
+    "#{String.pad_leading("#{minutes}", 2, "0")}:#{String.pad_leading("#{remaining_seconds}", 2, "0")}"
+  end
+
+  defp format_countdown(_), do: "00:00"
 
   defp get_vm_stats do
     %{
@@ -243,12 +261,51 @@ defmodule SpaceCapitalismWeb.GameLive do
   end
 
   def handle_info(:updateDisplay, socket) do
-    # Update resources
+    # Update resources and market data
     socket =
       socket
       |> assign(:resources, ResourceSupervisor.getAllResources())
-      # Return the updated socket
       |> assign(:market, StockMarket.get_prices())
+
+    # Also update planet data to reflect backend state changes (e.g., from random events)
+    all_planets = PlanetSupervisor.getAllPlanets()
+
+    # Update owned planets
+    owned_planets =
+      all_planets
+      |> Map.values()
+      |> Enum.filter(fn planet -> planet.owned end)
+      |> Enum.map(fn planet ->
+        %{
+          id: planet.id,
+          name: planet.name,
+          resource_type: planet.resource_type,
+          robots: planet.robots,
+          production_rate: planet.production_rate,
+          robot_cost: planet.robot_cost,
+          upgrade_cost: planet.upgrade_cost
+        }
+      end)
+
+    # Update available planets
+    available_planets =
+      all_planets
+      |> Map.values()
+      |> Enum.filter(fn planet -> !planet.owned end)
+      |> Enum.map(fn planet ->
+        %{
+          id: planet.id,
+          name: planet.name,
+          resource_type: planet.resource_type,
+          cost: planet.cost
+        }
+      end)
+
+    socket =
+      socket
+      |> assign(:planets, owned_planets)
+      |> assign(:available_planets, available_planets)
+      |> assign(:tax_countdown, EventManager.get_next_tax_countdown())
 
     {:noreply, socket}
   end

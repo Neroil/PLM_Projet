@@ -1,7 +1,6 @@
 defmodule Resource do
   use Agent
 
-
   # Démarrer un Agent avec un état initial et un nom unique
   def start_link(initial_count, name) do
     IO.puts("Ressource")
@@ -31,7 +30,7 @@ defmodule Resource do
     end)
   end
 
-  #Enlève au plus amount, sinon set le nombre à 0
+  # Enlève au plus amount, sinon set le nombre à 0
   def safe_remove(name, amount) do
     Agent.update(name, fn count ->
       if count < amount do
@@ -45,7 +44,12 @@ defmodule Resource do
   # Modifie la resource de {percentage} %
   def modify(name, percentage) do
     Agent.update(name, fn count ->
-      count + round(count*percentage)
+      count + round(count * percentage)
     end)
+  end
+
+  # Set the resource to a specific value
+  def set(name, amount) do
+    Agent.update(name, fn _count -> amount end)
   end
 end

@@ -11,10 +11,9 @@ defmodule GameSupervisor do
       ResourceSupervisor,
       PlanetSupervisor,
       StockMarket,
-      RandomEventManager
+      EventManager
     ]
 
     Supervisor.init(children, strategy: :one_for_one)
   end
-
 end

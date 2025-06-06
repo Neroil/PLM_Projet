@@ -117,7 +117,9 @@ defmodule Planet do
 
   @impl true
   def handle_call(:get_robots, _from, state) do
-    {:reply, state.robot_count, state}
+    # Get the actual robot count from the DynamicSupervisor
+    actual_robot_count = get_actual_robot_count(state[:name])
+    {:reply, actual_robot_count, state}
   end
 
   @impl true
@@ -208,17 +210,40 @@ defmodule Planet do
     # Calculate the upgrade cost based on current level
     upgrade_cost = calculate_upgrade_cost(state.level)
 
+    # Get the actual robot count from the DynamicSupervisor
+    actual_robot_count = get_actual_robot_count(state[:name])
+
+    # Update state if robot count is out of sync
+    updated_state =
+      if actual_robot_count != state.robot_count do
+        new_state = %{state | robot_count: actual_robot_count}
+        new_state = %{new_state | production_rate: calculate_production_rate(new_state)}
+        new_state
+      else
+        state
+      end
+
     data = %{
-      robot_count: state.robot_count,
-      cost: state.cost,
-      production_rate: state.production_rate,
-      robot_price: state[:robot_price],
+      robot_count: actual_robot_count,
+      cost: updated_state.cost,
+      production_rate: updated_state.production_rate,
+      robot_price: updated_state[:robot_price],
       upgrade_cost: upgrade_cost,
-      owned: state.owned,
-      resource: state.resource,
-      level: state.level
+      owned: updated_state.owned,
+      resource: updated_state.resource,
+      level: updated_state.level
     }
 
-    {:reply, data, state}
+    {:reply, data, updated_state}
+  end
+
+  # Get the actual number of robot processes from the DynamicSupervisor
+  defp get_actual_robot_count(planet_name) do
+    try do
+      DynamicSupervisor.which_children(planet_name)
+      |> length()
+    rescue
+      _ -> 0
+    end
   end
 end

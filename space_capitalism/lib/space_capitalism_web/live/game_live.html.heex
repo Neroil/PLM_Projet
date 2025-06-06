@@ -40,11 +40,12 @@
         </div>
       </div>
 
-      <div>
-        <h2 class="section-header text-purple-400 border-purple-500 break-words hyphens-auto">ASTRO_DOMINION</h2>
-        <div class="mt-1.5 space-y-0.5">
+      <div>        <h2 class="section-header text-purple-400 border-purple-500 break-words hyphens-auto">ASTRO_DOMINION</h2>        <div class="mt-1.5 space-y-0.5">
           <div class="flex justify-between"><span>Owned Planets:</span> <span class="text-slate-100"><%= length(@planets) %>/10</span></div>
-          <div class="flex justify-between"><span>Tax Due (Cycles):</span> <span class="text-red-400"><%= @tax_timer %> min</span></div>
+          <div class="flex justify-between">
+            <span>Next Tax Collection:</span> 
+            <span class="text-amber-400 font-mono"><%= format_countdown(@tax_countdown) %></span>
+          </div>
         </div>
       </div>
     </div>
