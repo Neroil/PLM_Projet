@@ -86,7 +86,10 @@ defmodule SpaceCapitalismWeb.GameLive do
         # MB
         memory_usage: :erlang.memory() |> Keyword.get(:total) |> div(1024 * 1024),
         vm_stats: get_vm_stats(),
-        vm_stats_minimized: false
+        vm_stats_minimized: false,
+
+        # Form state to persist input values across re-renders
+        form_values: %{}
       )
 
     # Start the function to update display
@@ -118,41 +121,41 @@ defmodule SpaceCapitalismWeb.GameLive do
     end
   end
 
-# Handle floats
-defp format_number(number) when is_float(number) do
-  number = round(number)
-  format_number(number)
-end
+  # Handle floats
+  defp format_number(number) when is_float(number) do
+    number = round(number)
+    format_number(number)
+  end
 
-# Handle values that are already strings
-defp format_number(number) when is_binary(number) do
-  number
-end
+  # Handle values that are already strings
+  defp format_number(number) when is_binary(number) do
+    number
+  end
 
-# Fallback for any other types
-defp format_number(_) do
-  "N/A"
-end
+  # Fallback for any other types
+  defp format_number(_) do
+    "N/A"
+  end
 
   defp get_vm_stats do
-  %{
-    process_count: Process.list() |> length(),
-    process_limit: :erlang.system_info(:process_limit) |> format_number(),
-    # MB
-    memory_usage: "#{:erlang.memory() |> Keyword.get(:total) |> div(1024 * 1024)} MB",
-    reduction_count: :erlang.statistics(:reductions) |> elem(0) |> format_number(),
-    run_queue: :erlang.statistics(:run_queue),
-    # More reliable activity indicators
-    reductions_per_second: get_reductions_per_second() |> format_number(),
-    # Number of schedulers (OS threads)
-    scheduler_count: :erlang.system_info(:schedulers_online),
-    atom_count: :erlang.system_info(:atom_count) |> format_number(),
-    # Garbage collection info
-    gc_count: :erlang.statistics(:garbage_collection) |> elem(0) |> format_number(),
-    # Message queue activity
-    io_activity: :erlang.statistics(:io) |> elem(0) |> elem(0) |> format_number()
-  }
-end
+    %{
+      process_count: Process.list() |> length(),
+      process_limit: :erlang.system_info(:process_limit) |> format_number(),
+      # MB
+      memory_usage: "#{:erlang.memory() |> Keyword.get(:total) |> div(1024 * 1024)} MB",
+      reduction_count: :erlang.statistics(:reductions) |> elem(0) |> format_number(),
+      run_queue: :erlang.statistics(:run_queue),
+      # More reliable activity indicators
+      reductions_per_second: get_reductions_per_second() |> format_number(),
+      # Number of schedulers (OS threads)
+      scheduler_count: :erlang.system_info(:schedulers_online),
+      atom_count: :erlang.system_info(:atom_count) |> format_number(),
+      # Garbage collection info
+      gc_count: :erlang.statistics(:garbage_collection) |> elem(0) |> format_number(),
+      # Message queue activity
+      io_activity: :erlang.statistics(:io) |> elem(0) |> elem(0) |> format_number()
+    }
+  end
 
   defp get_reductions_per_second do
     current_time = :erlang.monotonic_time(:millisecond)
@@ -228,10 +231,28 @@ end
     socket =
       socket
       |> assign(:resources, ResourceSupervisor.getAllResources())
+      # Return the updated socket
       |> assign(:market, StockMarket.get_prices())
 
-    # Return the updated socket
     {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("sell_form_change", %{"quantity" => quantity, "resource" => resource}, socket) do
+    # Store the sell form value in socket state
+    form_key = "#{resource}_sell_quantity"
+    new_form_values = Map.put(socket.assigns.form_values, form_key, quantity)
+
+    {:noreply, assign(socket, :form_values, new_form_values)}
+  end
+
+  @impl true
+  def handle_event("buy_form_change", %{"quantity" => quantity, "resource" => resource}, socket) do
+    # Store the buy form value in socket state
+    form_key = "#{resource}_buy_quantity"
+    new_form_values = Map.put(socket.assigns.form_values, form_key, quantity)
+
+    {:noreply, assign(socket, :form_values, new_form_values)}
   end
 
   def handle_event("sell_resource", %{"resource" => resource, "quantity" => quantity}, socket) do
@@ -240,24 +261,32 @@ end
       {:noreply, socket}
     else
       StockMarket.sell(String.to_atom(resource), String.to_integer(quantity))
-      {:noreply, socket}
+      # Clear the form value after successful transaction
+      sell_form_key = "#{resource}_sell_quantity"
+      new_form_values = Map.delete(socket.assigns.form_values, sell_form_key)
+
+      {:noreply, assign(socket, :form_values, new_form_values)}
     end
   end
 
   @impl true
-def handle_event("toggle_vm_stats", _params, socket) do
-  {:noreply, assign(socket, :vm_stats_minimized, !socket.assigns.vm_stats_minimized)}
-end
-
-def handle_event("buy_resource", %{"resource" => resource, "quantity" => quantity}, socket) do
-  if resource == "" or quantity == "" do
-    IO.puts("Must not ne empty")
-    {:noreply, socket}
-  else
-    StockMarket.buy(String.to_atom(resource), String.to_integer(quantity))
-    {:noreply, socket}
+  def handle_event("toggle_vm_stats", _params, socket) do
+    {:noreply, assign(socket, :vm_stats_minimized, !socket.assigns.vm_stats_minimized)}
   end
-end
+
+  def handle_event("buy_resource", %{"resource" => resource, "quantity" => quantity}, socket) do
+    if resource == "" or quantity == "" do
+      IO.puts("Must not ne empty")
+      {:noreply, socket}
+    else
+      StockMarket.buy(String.to_atom(resource), String.to_integer(quantity))
+      # Clear the form value after successful transaction
+      buy_form_key = "#{resource}_buy_quantity"
+      new_form_values = Map.delete(socket.assigns.form_values, buy_form_key)
+
+      {:noreply, assign(socket, :form_values, new_form_values)}
+    end
+  end
 
   @impl true
   def handle_event("buy_planet", %{"planet" => planet_name}, socket) do
