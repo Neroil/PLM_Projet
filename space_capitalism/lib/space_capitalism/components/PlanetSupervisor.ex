@@ -23,7 +23,8 @@ defmodule PlanetSupervisor do
   end
 
   def getAllOwnedPlanets() do
-    Enum.filter(getPlanets(), fn {_name, _cost, _resource_type, _base_cost, _base_production, is_owned} ->
+    Enum.filter(getPlanets(), fn {_name, _cost, _resource_type, _base_cost, _base_production,
+                                  is_owned} ->
       is_owned
     end)
   end
@@ -50,7 +51,7 @@ defmodule PlanetSupervisor do
     |> Enum.into(%{})
   end
 
-  #Helper function to get a planet by its name
+  # Helper function to get a planet by its name
   def getAtom(string) do
     # Convert planet_id into atom
     id =

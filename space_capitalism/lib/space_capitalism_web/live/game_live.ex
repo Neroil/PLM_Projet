@@ -3,8 +3,6 @@ defmodule SpaceCapitalismWeb.GameLive do
   alias Phoenix.PubSub
 
   import SpaceCapitalismWeb.GameComponents
-  import ResourceSupervisor
-  import StockMarket
 
   @impl true
   def mount(_params, _session, socket) do
@@ -40,6 +38,7 @@ defmodule SpaceCapitalismWeb.GameLive do
           cost: planet.cost
         }
       end)
+      |> Enum.sort_by(& &1.cost, :asc)
 
     # Initialize game state
     socket =
@@ -47,32 +46,18 @@ defmodule SpaceCapitalismWeb.GameLive do
         page_title: "Space Capitalism",
         resources: ResourceSupervisor.getAllResources(),
         planets: owned_planets,
-        available_planets: available_planets,
-
-        # Market prices
+        available_planets: available_planets,        # Market prices
         market: StockMarket.get_prices(),
 
-        # Available technology upgrades
-        available_upgrades: [
-          %{
-            id: "iron_boost",
-            name: "Iron Harvesting Boost",
-            description: "Increase iron production by 25%",
-            cost: 3000
-          },
-          %{
-            id: "gold_boost",
-            name: "Gold Mining Boost",
-            description: "Increase gold production by 25%",
-            cost: 5000
-          },
-          %{
-            id: "uranium_boost",
-            name: "Uranium Extraction Boost",
-            description: "Increase uranium production by 25%",
-            cost: 7500
-          }
-        ],
+        # Available technology upgrades - get from GameSupervisor
+        available_upgrades: GameSupervisor.getUpgrades()
+          |> Enum.map(fn {id, upgrade} ->
+            Map.put(upgrade, :id, id)
+          end)
+          |> Enum.sort_by(& &1.cost, :asc),
+
+        # Track purchased upgrades
+        purchased_upgrades: [],
 
         # Recent events
         events: [
@@ -422,6 +407,53 @@ defmodule SpaceCapitalismWeb.GameLive do
       # Fallback for any other response format
       _ ->
         {:noreply, socket}
+    end
+  end
+  # Upgrade events handler
+  @impl true
+  def handle_event("buy_upgrade", %{"upgrade" => upgrade_id}, socket) do
+    case GameSupervisor.buyUpgrade(upgrade_id) do
+      {:ok, message} ->
+        # Remove the purchased upgrade from available list
+        updated_available_upgrades =
+          Enum.filter(socket.assigns.available_upgrades, fn upgrade ->
+            upgrade.id != upgrade_id
+          end)
+
+        # Add to purchased upgrades list
+        updated_purchased_upgrades = [upgrade_id | socket.assigns.purchased_upgrades]
+
+        # Update the planets list and upgrade state
+        send(self(), :updateDisplayOnClick)
+
+        socket
+        |> assign(:available_upgrades, updated_available_upgrades)
+        |> assign(:purchased_upgrades, updated_purchased_upgrades)
+        |> put_flash(:info, message)
+        |> then(&{:noreply, &1})
+
+      {:error, reason} ->
+        {:noreply, put_flash(socket, :error, reason)}
+
+      # Fallback for any other response format
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
+  # Utility functions for upgrade management
+  defp get_upgrade_info(upgrade_id) do
+    GameSupervisor.getUpgrade(upgrade_id)
+  end
+
+  defp is_upgrade_available?(upgrade_id, purchased_upgrades) do
+    !Enum.member?(purchased_upgrades, upgrade_id)
+  end
+
+  defp can_afford_upgrade?(upgrade_id) do
+    case get_upgrade_info(upgrade_id) do
+      nil -> false
+      upgrade -> Resource.get(:dG) >= upgrade.cost
     end
   end
 
