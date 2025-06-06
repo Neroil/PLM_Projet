@@ -255,34 +255,36 @@ defmodule SpaceCapitalismWeb.GameLive do
     {:noreply, assign(socket, :form_values, new_form_values)}
   end
 
-  def handle_event("sell_resource", %{"resource" => resource, "quantity" => quantity}, socket) do
-    if resource == "" or quantity == "" do
-      IO.puts("Must not ne empty")
-      {:noreply, socket}
-    else
-      StockMarket.sell(String.to_atom(resource), String.to_integer(quantity))
-      # Clear the form value after successful transaction
-      sell_form_key = "#{resource}_sell_quantity"
-      new_form_values = Map.delete(socket.assigns.form_values, sell_form_key)
-
-      {:noreply, assign(socket, :form_values, new_form_values)}
-    end
-  end
-
   @impl true
   def handle_event("toggle_vm_stats", _params, socket) do
     {:noreply, assign(socket, :vm_stats_minimized, !socket.assigns.vm_stats_minimized)}
   end
 
   def handle_event("buy_resource", %{"resource" => resource, "quantity" => quantity}, socket) do
+    handle_resource_transaction(resource, quantity, socket, false)
+  end
+
+  def handle_event("sell_resource", %{"resource" => resource, "quantity" => quantity}, socket) do
+    handle_resource_transaction(resource, quantity, socket, true)
+  end
+
+  # Private function to handle both buying and selling resources
+  defp handle_resource_transaction(resource, quantity, socket, is_selling) do
     if resource == "" or quantity == "" do
-      IO.puts("Must not ne empty")
+      IO.puts("Must not be empty")
       {:noreply, socket}
     else
-      StockMarket.buy(String.to_atom(resource), String.to_integer(quantity))
-      # Clear the form value after successful transaction
-      buy_form_key = "#{resource}_buy_quantity"
-      new_form_values = Map.delete(socket.assigns.form_values, buy_form_key)
+      # Perform the transaction
+      if is_selling do
+        StockMarket.sell(String.to_atom(resource), String.to_integer(quantity))
+      else
+        StockMarket.buy(String.to_atom(resource), String.to_integer(quantity))
+      end
+
+      # Clear the appropriate form value after successful transaction
+      form_type = if is_selling, do: "sell", else: "buy"
+      form_key = "#{resource}_#{form_type}_quantity"
+      new_form_values = Map.delete(socket.assigns.form_values, form_key)
 
       {:noreply, assign(socket, :form_values, new_form_values)}
     end
