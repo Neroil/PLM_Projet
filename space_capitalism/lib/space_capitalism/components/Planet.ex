@@ -64,10 +64,9 @@ defmodule Planet do
     IO.puts("Getting resource #{name}")
     GenServer.call(via_tuple(name), :get_resource)
   end
-
   # API functions
   def add_robot(name, count) do
-    GenServer.cast(via_tuple(name), {:add_robot, count})
+    GenServer.call(via_tuple(name), {:add_robot, count})
   end
 
   def get_robots(name) do
@@ -164,11 +163,12 @@ defmodule Planet do
       {:noreply, state}
     end
   end
-
   @impl true
-  def handle_cast({:add_robot, count}, state) do
+  def handle_call({:add_robot, count}, _from, state) do
+    total_cost = count * state[:robot_price]
+
     # Check if enough money
-    case Resource.remove(:dG, count * state[:robot_price]) do
+    case Resource.remove(:dG, total_cost) do
       {:ok, _} ->
         RobotDynSupervisor.add_worker(
           state[:name],
@@ -179,11 +179,16 @@ defmodule Planet do
 
         new_state = %{state | robot_count: state.robot_count + count}
         new_state = %{new_state | production_rate: calculate_production_rate(new_state)}
-        {:noreply, new_state}
+
+        planet_name = to_string(state[:name]) |> String.upcase()
+        success_message = "Successfully deployed #{count} robot unit#{if count > 1, do: "s", else: ""} to #{planet_name} for #{total_cost} $dG"
+
+        {:reply, {:ok, success_message}, new_state}
 
       {:error, _} ->
-        IO.puts("Not enough money")
-        {:noreply, state}
+        planet_name = to_string(state[:name]) |> String.upcase()
+        error_message = "Insufficient funds to deploy robots to #{planet_name} (#{total_cost} $dG required)"
+        {:reply, {:error, error_message}, state}
     end
   end
 

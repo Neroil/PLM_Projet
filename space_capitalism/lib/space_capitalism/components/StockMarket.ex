@@ -13,7 +13,7 @@ defmodule StockMarket do
       hasheidium: %{price: 5000, trend: 0},
       crypto1: %{price: 10, trend: 0},
       crypto2: %{price: 100, trend: 0},
-      crypto3: %{price: 1000, trend: 0},
+      crypto3: %{price: 1000, trend: 0}
     }
 
     GenServer.start_link(__MODULE__, prices, name: __MODULE__)
@@ -30,11 +30,11 @@ defmodule StockMarket do
   end
 
   def sell(resource, quantity) do
-    GenServer.cast(__MODULE__, {:sell, resource, quantity})
+    GenServer.call(__MODULE__, {:sell, resource, quantity})
   end
 
   def buy(resource, quantity) do
-    GenServer.cast(__MODULE__, {:buy, resource, quantity})
+    GenServer.call(__MODULE__, {:buy, resource, quantity})
   end
 
   def update(resource, difference) do
@@ -49,36 +49,53 @@ defmodule StockMarket do
   @impl true
   def handle_cast({:update, resource, difference}, state) do
     trend = if difference > 0, do: 1, else: -1
-    new_state = Map.put(state, resource, %{price: state[resource][:price] + difference, trend: trend})
+
+    new_state =
+      Map.put(state, resource, %{price: state[resource][:price] + difference, trend: trend})
+
     {:noreply, new_state}
   end
 
   @impl true
-  def handle_cast({:sell, resource, quantity}, state) do
+  def handle_call({:sell, resource, quantity}, _from, state) do
     case Resource.remove(resource, quantity) do
-      {:ok, _} -> Resource.add(:dG, quantity * state[resource][:price])
-      {:error, _} -> IO.puts("Not enough #{resource}")
+      {:ok, _} ->
+        Resource.add(:dG, quantity * state[resource][:price])
+
+        {:reply,
+         {:ok,
+          "Successfully sold #{quantity} #{resource} for #{quantity * state[resource][:price]} $dG"},
+         state}
+
+      {:error, _} ->
+        {:reply, {:error, "Insufficient #{resource} to sell (#{quantity} requested)"}, state}
     end
-    {:noreply, state}
   end
 
   @impl true
-  def handle_cast({:buy, resource, quantity}, state) do
-    case Resource.remove(:dG, quantity * state[resource][:price]) do
-      {:ok, _} -> Resource.add(resource, quantity)
-      {:error, _} -> IO.puts("Not enough money")
+  def handle_call({:buy, resource, quantity}, _from, state) do
+    total_cost = quantity * state[resource][:price]
+
+    case Resource.remove(:dG, total_cost) do
+      {:ok, _} ->
+        Resource.add(resource, quantity)
+
+        {:reply, {:ok, "Successfully bought #{quantity} #{resource} for #{total_cost} $dG"},
+         state}
+
+      {:error, _} ->
+        {:reply, {:error, "Insufficient funds (#{total_cost} $dG required)"}, state}
     end
-    {:noreply, state}
   end
 
   defp generateNewPrice(actualPrice) do
     newVal = Enum.random(0..200) - 100
+
     if actualPrice + newVal > 0 do
       newVal
     else
       actualPrice - 1
     end
-
   end
 
   defp generateRandomTime() do
@@ -87,8 +104,7 @@ defmodule StockMarket do
 
   @impl true
   def handle_info(:randomizePrices, state) do
-    for res <- Map.keys(state), do:
-      update(res, generateNewPrice(state[res][:price]))
+    for res <- Map.keys(state), do: update(res, generateNewPrice(state[res][:price]))
 
     # Continue la boucle
     Process.send_after(self(), :randomizePrices, generateRandomTime())

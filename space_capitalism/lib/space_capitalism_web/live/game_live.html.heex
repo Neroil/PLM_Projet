@@ -173,13 +173,13 @@
                 <div class="flex items-center space-x-1">
                   <form phx-submit="sell_resource" phx-change="sell_form_change">
                     <label for={"sell-#{resource}"} class="sr-only">Sell <%= resource %></label>
-                    <input type="number" name="quantity" id={"sell-#{resource}"} min="1" max={Map.get(@resources, resource)} class="input-pixel w-12" placeholder="QTY" value={Map.get(@form_values, "#{resource}_sell_quantity", "")}/>
+                    <input type="number" name="quantity" id={"sell-#{resource}"}  class="input-pixel w-12" placeholder="QTY" value={Map.get(@form_values, "#{resource}_sell_quantity", "")}/>
                     <input type="hidden" name="resource" value={"#{resource}"}/>
                     <input type="submit" value="SELL" class="pixel-button pixel-button-yellow text-[0.6rem] px-1.5 py-1"/>
                   </form>
                   <form phx-submit="buy_resource" phx-change="buy_form_change">
                     <label for={"buy-#{resource}"} class="sr-only">Buy <%= resource %></label>
-                    <input type="number" name="quantity" id={"buy-#{resource}"} min="1" class="input-pixel w-12" placeholder="QTY" value={Map.get(@form_values, "#{resource}_buy_quantity", "")}/>
+                    <input type="number" name="quantity" id={"buy-#{resource}"} class="input-pixel w-12" placeholder="QTY" value={Map.get(@form_values, "#{resource}_buy_quantity", "")}/>
                     <input type="hidden" name="resource" value={"#{resource}"}/>
                     <input type="submit" value="BUY" class="pixel-button pixel-button-yellow text-[0.6rem] px-1.5 py-1"/>
                   </form>

@@ -340,26 +340,47 @@ defmodule SpaceCapitalismWeb.GameLive do
   def handle_event("sell_resource", %{"resource" => resource, "quantity" => quantity}, socket) do
     handle_resource_transaction(resource, quantity, socket, true)
   end
-
   # Private function to handle both buying and selling resources
   defp handle_resource_transaction(resource, quantity, socket, is_selling) do
     if resource == "" or quantity == "" do
-      IO.puts("Must not be empty")
-      {:noreply, socket}
+      {:noreply, put_flash(socket, :error, "Resource and quantity must not be empty")}
     else
-      # Perform the transaction
-      if is_selling do
-        StockMarket.sell(String.to_atom(resource), String.to_integer(quantity))
-      else
-        StockMarket.buy(String.to_atom(resource), String.to_integer(quantity))
+      try do
+        quantity_int = String.to_integer(quantity)
+
+        if quantity_int <= 0 do
+          {:noreply, put_flash(socket, :error, "Quantity must be greater than 0")}
+        else
+          # Perform the transaction
+          result = if is_selling do
+            StockMarket.sell(String.to_atom(resource), quantity_int)
+          else
+            StockMarket.buy(String.to_atom(resource), quantity_int)
+          end
+
+          case result do
+            {:ok, message} ->
+              # Clear the appropriate form value after successful transaction
+              form_type = if is_selling, do: "sell", else: "buy"
+              form_key = "#{resource}_#{form_type}_quantity"
+              new_form_values = Map.delete(socket.assigns.form_values, form_key)
+
+              socket
+              |> assign(:form_values, new_form_values)
+              |> put_flash(:info, message)
+              |> then(&{:noreply, &1})
+
+            {:error, error_message} ->
+              {:noreply, put_flash(socket, :error, error_message)}
+
+            _ ->
+              {:noreply, put_flash(socket, :error, "Transaction failed due to unknown error")}
+          end
+        end
+      rescue
+        ArgumentError ->
+          {:noreply, put_flash(socket, :error, "Invalid quantity format")}
       end
-
-      # Clear the appropriate form value after successful transaction
-      form_type = if is_selling, do: "sell", else: "buy"
-      form_key = "#{resource}_#{form_type}_quantity"
-      new_form_values = Map.delete(socket.assigns.form_values, form_key)
-
-      {:noreply, assign(socket, :form_values, new_form_values)}
     end
   end
 
@@ -387,192 +408,21 @@ defmodule SpaceCapitalismWeb.GameLive do
     {:noreply, socket}
   end
 
-  # Handle events from UI
   @impl true
   def handle_event("add_robot", %{"planet" => planet_id}, socket) do
-    Planet.add_robot(String.to_atom(planet_id), 1)
-    send(self(), :updateDisplayOnClick)
+    case Planet.add_robot(String.to_atom(planet_id), 1) do
+      {:ok, message} ->
+        # Update the planets list
+        send(self(), :updateDisplayOnClick)
+        {:noreply, put_flash(socket, :info, message)}
 
-    {:noreply, socket}
-  end
+      {:error, reason} ->
+        {:noreply, put_flash(socket, :error, reason)}
 
-  @doc """
-  @impl true
-  def handle_event("buy_planet", %{"planet" => planet_id}, socket) do
-    # Find the planet to buy
-    planet = Enum.find(socket.assigns.available_planets, &(&1.id == planet_id))
-
-    if planet do
-      # Check if player can afford the planet
-      if socket.assigns.resources.money >= planet.cost do
-        # Update money
-        new_resources = Map.update!(socket.assigns.resources, :money, &(&1 - planet.cost))
-
-        # Add planet to owned planets with initial settings
-        new_planet = Map.merge(planet, %{
-          robots: 0,
-          production_rate: 0,
-          robot_cost: 500,
-          upgrade_cost: 2000
-        })
-
-        new_planets = [new_planet | socket.assigns.planets]
-
-        # Remove from available planets
-        new_available = Enum.reject(socket.assigns.available_planets, &(&1.id == planet_id))
-
-        # Add event
-        new_events = [%{message: "Purchased planet # {planet.name}!"} | socket.assigns.events] |> Enum.take(5)
-
-        socket = socket
-          |> assign(:resources, new_resources)
-          |> assign(:planets, new_planets)
-          |> assign(:available_planets, new_available)
-          |> assign(:events, new_events)
-
+      # Fallback for any other response format
+      _ ->
         {:noreply, socket}
-      else
-        {:noreply, put_flash(socket, :error, "Not enough money to buy planet!")}
-      end
-    else
-      {:noreply, socket}
     end
   end
 
-  @impl true
-  def handle_event("sell_resource", %{"resource" => resource}, socket) do
-    # Get the amount from the form (would need to be implemented properly)
-    # This is a placeholder - in a real implementation, you would get this from the params
-    amount = 10  # Example amount
-
-    resource_key = String.downcase(resource) |> String.to_atom()
-    market_data = socket.assigns.market[resource]
-
-    # Check if player has enough resources
-    if Map.get(socket.assigns.resources, resource_key, 0) >= amount do
-      # Calculate sale value
-      sale_value = amount * market_data.price
-
-      # Update resources
-      new_resources =
-        socket.assigns.resources
-        |> Map.update!(resource_key, &(&1 - amount))
-        |> Map.update!(:money, &(&1 + sale_value))
-
-      # Add event
-      new_events = [%{message: "Sold # {amount} # {resource} for # {sale_value} $dG."} | socket.assigns.events] |> Enum.take(5)
-
-      socket = socket
-        |> assign(:resources, new_resources)
-        |> assign(:events, new_events)
-
-      {:noreply, socket}
-    else
-      {:noreply, put_flash(socket, :error, "Not enough # {resource} to sell!")}
-    end
-  end
-
-  @impl true
-  def handle_event("buy_resource", %{"resource" => resource}, socket) do
-    # Get the amount from the form (would need to be implemented properly)
-    # This is a placeholder - in a real implementation, you would get this from the params
-    amount = 10  # Example amount
-
-    resource_key = String.downcase(resource) |> String.to_atom()
-    market_data = socket.assigns.market[resource]
-
-    # Calculate purchase cost
-    purchase_cost = amount * market_data.price
-
-    # Check if player has enough money
-    if socket.assigns.resources.money >= purchase_cost do
-      # Update resources
-      new_resources =
-        socket.assigns.resources
-        |> Map.update!(resource_key, &(&1 + amount))
-        |> Map.update!(:money, &(&1 - purchase_cost))
-
-      # Add event
-      new_events = [%{message: "Bought # {amount} # {resource} for # {purchase_cost} $dG."} | socket.assigns.events] |> Enum.take(5)
-
-      socket = socket
-        |> assign(:resources, new_resources)
-        |> assign(:events, new_events)
-
-      {:noreply, socket}
-    else
-      {:noreply, put_flash(socket, :error, "Not enough money to buy # {resource}!")}
-    end
-  end
-
-  @impl true
-  def handle_event("buy_upgrade", %{"upgrade" => upgrade_id}, socket) do
-    # Find the upgrade
-    upgrade = Enum.find(socket.assigns.available_upgrades, &(&1.id == upgrade_id))
-
-    if upgrade do
-      # Check if player can afford the upgrade
-      if socket.assigns.resources.money >= upgrade.cost do
-        # Update money
-        new_resources = Map.update!(socket.assigns.resources, :money, &(&1 - upgrade.cost))
-
-        # Remove upgrade from available list
-        new_upgrades = Enum.reject(socket.assigns.available_upgrades, &(&1.id == upgrade_id))
-
-        # Apply upgrade effect (simplified example)
-        socket =
-          case upgrade.id do
-            "iron_boost" ->
-              # Increase iron production by 25% on all iron planets
-              new_planets = Enum.map(socket.assigns.planets, fn planet ->
-                if planet.resource_type == "Iron (Fe)" do
-                  Map.update!(planet, :production_rate, &(&1 * 1.25))
-                else
-                  planet
-                end
-              end)
-              assign(socket, :planets, new_planets)
-
-            "gold_boost" ->
-              # Increase gold production by 25% on all gold planets
-              new_planets = Enum.map(socket.assigns.planets, fn planet ->
-                if planet.resource_type == "Gold (Or)" do
-                  Map.update!(planet, :production_rate, &(&1 * 1.25))
-                else
-                  planet
-                end
-              end)
-              assign(socket, :planets, new_planets)
-
-            "uranium_boost" ->
-              # Increase uranium production by 25% on all uranium planets
-              new_planets = Enum.map(socket.assigns.planets, fn planet ->
-                if planet.resource_type == "Uranium (Ur)" do
-                  Map.update!(planet, :production_rate, &(&1 * 1.25))
-                else
-                  planet
-                end
-              end)
-              assign(socket, :planets, new_planets)
-
-            _ -> socket
-          end
-
-        # Add event
-        new_events = [%{message: "Purchased upgrade: # {upgrade.name}!"} | socket.assigns.events] |> Enum.take(5)
-
-        socket = socket
-          |> assign(:resources, new_resources)
-          |> assign(:available_upgrades, new_upgrades)
-          |> assign(:events, new_events)
-
-        {:noreply, socket}
-      else
-        {:noreply, put_flash(socket, :error, "Not enough money to buy upgrade!")}
-      end
-    else
-      {:noreply, socket}
-    end
-  end
-  """
 end

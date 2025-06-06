@@ -102,7 +102,6 @@ defmodule SpaceCapitalismWeb.CoreComponents do
   attr :title, :string, default: nil
   attr :kind, :atom, values: [:info, :error], doc: "used for styling and flash lookup"
   attr :rest, :global, doc: "the arbitrary HTML attributes to add to the flash container"
-
   slot :inner_block, doc: "the optional inner block that renders the flash message"
 
   def flash(assigns) do
@@ -115,7 +114,7 @@ defmodule SpaceCapitalismWeb.CoreComponents do
       phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
       role="alert"
       class={[
-        "fixed top-2 right-2 mr-2 w-80 sm:w-96 z-50 rounded-lg p-3 ring-1",
+        "relative w-80 sm:w-96 rounded-lg p-3 ring-1 mb-2",
         @kind == :info && "bg-emerald-50 text-emerald-800 ring-emerald-500 fill-cyan-900",
         @kind == :error && "bg-rose-50 text-rose-900 shadow-md ring-rose-500 fill-rose-900"
       ]}
@@ -133,7 +132,6 @@ defmodule SpaceCapitalismWeb.CoreComponents do
     </div>
     """
   end
-
   @doc """
   Shows the flash group with standard titles and content.
 
@@ -146,7 +144,7 @@ defmodule SpaceCapitalismWeb.CoreComponents do
 
   def flash_group(assigns) do
     ~H"""
-    <div id={@id}>
+    <div id={@id} class="fixed top-2 right-2 z-50 flex flex-col space-y-2">
       <.flash kind={:info} title={gettext("Success!")} flash={@flash} />
       <.flash kind={:error} title={gettext("Error!")} flash={@flash} />
       <.flash
