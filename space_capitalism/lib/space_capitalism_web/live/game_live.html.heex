@@ -58,7 +58,10 @@
       <% else %>
         <%= for event <- @events do %>
           <div class="event-item">
-            <p class="text-xs"><span class="text-sky-600">&gt; [<%= "LOG" %>]</span> <%= event.message %></p>
+            <p class="text-xs">
+              <span class="text-sky-600">&gt; [<%= Map.get(event, :timestamp, "SYS") %>]</span> 
+              <span class="text-amber-300"><%= event.message %></span>
+            </p>
           </div>
         <% end %>
       <% end %>

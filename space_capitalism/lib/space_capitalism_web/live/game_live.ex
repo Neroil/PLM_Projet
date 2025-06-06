@@ -96,14 +96,14 @@ defmodule SpaceCapitalismWeb.GameLive do
     :timer.send_interval(200, self(), :updateDisplay)
 
     # Enable scheduler utilization tracking
-    :erlang.system_flag(:scheduler_wall_time, true)
-
-    # Start VM stats update timer
+    :erlang.system_flag(:scheduler_wall_time, true)    # Start VM stats update timer
     :timer.send_interval(1000, self(), :update_vm_stats)
+
+    # Subscribe to galactic events
+    PubSub.subscribe(SpaceCapitalism.PubSub, "galactic_events")
 
     {:ok, socket}
   end
-
   @impl true
   def handle_info(:update_vm_stats, socket) do
     # Update VM stats
@@ -111,6 +111,22 @@ defmodule SpaceCapitalismWeb.GameLive do
 
     # Assign the updated stats to the socket
     {:noreply, assign(socket, :vm_stats, updated_stats)}
+  end
+
+    @impl true
+  def handle_info({:galactic_event, event_message}, socket) do
+    # Get current timestamp in galactic format
+    timestamp = DateTime.utc_now() |> DateTime.to_time() |> Time.to_string() |> String.slice(0, 8)
+
+    # Add the new event to the events list with timestamp, keeping only the latest 5
+    new_events = [
+      %{
+        message: event_message,
+        timestamp: timestamp
+      } | socket.assigns.events
+    ] |> Enum.take(5)
+
+    {:noreply, assign(socket, :events, new_events)}
   end
 
   defp format_number(number) when is_integer(number) do
