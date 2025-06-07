@@ -1,6 +1,11 @@
 defmodule EventManager do
   use GenServer
 
+  @moduledoc """
+  The EventManger handle the random event event
+  that may happen during the game and the tax collection.
+  """
+
   import StockMarket
   import Resource
   import RobotDynSupervisor
@@ -8,17 +13,23 @@ defmodule EventManager do
 
   alias Phoenix.PubSub
 
+  @tax_collection_time 300_000
+
+  @doc """
+  Start the EventManager
+  """
   def start_link(_) do
     IO.puts("EventManager starting...")
 
     events = [
-      :market_up,
-      :market_down,
-      :money_loss,
-      :money_gain,
-      :robot_loss
+      :market_up,   # The market's price go up
+      :market_down, # The market's price go down
+      :money_loss,  # The player loose some money
+      :money_gain,  # The player gain some money
+      :robot_loss   # Some robot are removed from an owned planet
     ]
 
+    # Random events happend between a 10 to 60 seconds interval
     times = %{
       min: 10000,
       max: 60000
@@ -27,6 +38,12 @@ defmodule EventManager do
     GenServer.start_link(__MODULE__, %{events: events, times: times}, name: __MODULE__)
   end
 
+  @doc """
+  Get the time before the next tax collection
+
+  ## Return value
+  `Integer` with the time remaining in seconds
+  """
   def get_next_tax_countdown() do
     try do
       GenServer.call(__MODULE__, :get_next_tax_countdown)
@@ -38,44 +55,57 @@ defmodule EventManager do
   @impl true
   def init(state) do
     IO.puts("EventManager initialized - scheduling tax collection in 5 minutes")
+
     # Store the initial tax collection time
-    next_tax_time = :erlang.system_time(:millisecond) + 300_000
+    next_tax_time = :erlang.system_time(:millisecond) + @tax_collection_time
     state = Map.put(state, :next_tax_time, next_tax_time)
 
+    # Start the timers for the random events and the tax collection
     Process.send_after(self(), :nextEvent, 30000)
-    Process.send_after(self(), :tax_collection, 300_000)
+    Process.send_after(self(), :tax_collection, @tax_collection_time)
+
     {:ok, state}
   end
 
   @impl true
   def handle_info(:nextEvent, state) do
+    #Make the event happen
     apply_event(Enum.random(state[:events]))
+
+    # Schedule the next event
     Process.send_after(self(), :nextEvent, Enum.random(state[:times][:min]..state[:times][:max]))
+
     {:noreply, state}
   end
 
   @impl true
   def handle_info(:tax_collection, state) do
     collect_tax()
+
     # Update next tax collection time
-    next_tax_time = :erlang.system_time(:millisecond) + 300_000
+    next_tax_time = :erlang.system_time(:millisecond) + @tax_collection_time
     state = Map.put(state, :next_tax_time, next_tax_time)
 
-    Process.send_after(self(), :tax_collection, 300_000)
+    # Schedule the next tax collection
+    Process.send_after(self(), :tax_collection, @tax_collection_time)
     {:noreply, state}
   end
 
   @impl true
   def handle_call(:get_next_tax_countdown, _from, state) do
+    # Get the time remaining
     current_time = :erlang.system_time(:millisecond)
-    next_tax_time = Map.get(state, :next_tax_time, current_time + 300_000)
+    next_tax_time = Map.get(state, :next_tax_time, current_time + @tax_collection_time)
 
+    # Transform the time in second
     remaining_ms = max(0, next_tax_time - current_time)
     remaining_seconds = div(remaining_ms, 1000)
 
     {:reply, remaining_seconds, state}
   end
 
+  # Apply the effect of an event
+  # event: Atom containing the event name
   defp apply_event(event) do
     IO.puts("#{event} is happening")
 
@@ -87,33 +117,28 @@ defmodule EventManager do
         market_down()
 
       :money_loss ->
-        loss_amount = money_loss()
-
-        broadcast_event(
-          "FISCAL_AUDIT_NOTICE :: Intergalactic Revenue Service has imposed emergency taxation. #{loss_amount} $dG debited per Regulation X-74."
-        )
+        money_loss()
 
       :money_gain ->
-        gain_amount = money_gain()
-
-        broadcast_event(
-          "COLONIAL_SUBSIDY_RECEIVED :: Corporate expansion incentive deposited. #{gain_amount} $dG approved for frontier operations."
-        )
+        money_gain()
 
       :robot_loss ->
         robot_loss()
     end
   end
 
+  # Broadcast a message to the frontend to be displayed
   defp broadcast_event(message) do
     PubSub.broadcast(SpaceCapitalism.PubSub, "galactic_events", {:galactic_event, message})
   end
 
+  # Increase the prices of the market
   defp market_up() do
     # Random increase between 3% and 8%
     increase_percentage = :rand.uniform_real() * 0.05 + 0.03
     percentage_display = Float.round(increase_percentage * 100, 1)
 
+    # Apply the augmentation
     for {resource, %{price: price, trend: trend}} <- StockMarket.get_prices() do
       StockMarket.update(resource, round(price * increase_percentage))
     end
@@ -123,11 +148,13 @@ defmodule EventManager do
     )
   end
 
+  # Decrease the prices of the market
   defp market_down() do
     # Random decrease between 5% and 12%
     decrease_percentage = :rand.uniform_real() * 0.07 + 0.05
     percentage_display = Float.round(decrease_percentage * 100, 1)
 
+    # Apply it
     for {resource, %{price: price, trend: trend}} <- StockMarket.get_prices() do
       StockMarket.update(resource, -round(price * decrease_percentage))
     end
@@ -137,6 +164,7 @@ defmodule EventManager do
     )
   end
 
+  # Removes money from the player
   defp money_loss() do
     current_money = Resource.get(:dG)
     # Random loss between 5% and 15%
@@ -145,9 +173,12 @@ defmodule EventManager do
 
     Resource.modify(:dG, -loss_percentage)
 
-    loss_amount
+    broadcast_event(
+      "FISCAL_AUDIT_NOTICE :: Intergalactic Revenue Service has imposed emergency taxation. #{loss_amount} $dG debited per Regulation X-74."
+    )
   end
 
+  # Gives money to the player
   defp money_gain() do
     current_money = Resource.get(:dG)
     # Random gain between 2% and 8%
@@ -156,20 +187,24 @@ defmodule EventManager do
 
     Resource.modify(:dG, gain_percentage)
 
-    # Return the actual gain amount for the message
-    gain_amount
+    broadcast_event(
+      "COLONIAL_SUBSIDY_RECEIVED :: Corporate expansion incentive deposited. #{gain_amount} $dG approved for frontier operations."
+    )
   end
 
+  # Remove some robots from a planet
   defp robot_loss() do
     owned_planets = PlanetSupervisor.getAllOwnedPlanets()
 
     if length(owned_planets) > 0 do
+      # Select a random planet
       planet =
         owned_planets
         |> Enum.map(fn {name, _, _, _, _, _} -> name end)
         |> Enum.random()
 
-      RobotDynSupervisor.remove_worker(planet, 1)
+      # Remove a number of robot equal to the number of planet
+      RobotDynSupervisor.remove_worker(planet, length(owned_planets))
 
       planet_name = to_string(planet) |> String.upcase()
 
@@ -184,6 +219,8 @@ defmodule EventManager do
     end
   end
 
+
+  # Collect the tax
   defp collect_tax() do
     owned_planets = PlanetSupervisor.getAllOwnedPlanets()
     planets_beyond_first = length(owned_planets) - 1
