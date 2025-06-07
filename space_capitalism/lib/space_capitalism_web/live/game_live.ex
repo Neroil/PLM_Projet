@@ -3,6 +3,7 @@ defmodule SpaceCapitalismWeb.GameLive do
   alias Phoenix.PubSub
 
   import SpaceCapitalismWeb.GameComponents
+
   @impl true
   def mount(_params, _session, socket) do
     {owned_planets, available_planets} = fetch_and_format_planets()
@@ -17,9 +18,9 @@ defmodule SpaceCapitalismWeb.GameLive do
         available_planets: available_planets,
         market: StockMarket.get_prices(),
 
-        # Available technology upgrades - get from GameSupervisor
+        # Available technology upgrades - get from UpgradeManager
         available_upgrades:
-          GameSupervisor.getUpgrades()
+          UpgradeManager.getUpgrades()
           |> Enum.map(fn {id, upgrade} ->
             Map.put(upgrade, :id, id)
           end)
@@ -262,13 +263,6 @@ defmodule SpaceCapitalismWeb.GameLive do
   end
 
   @impl true
-  def handle_event("upgrade_planet", %{"planet" => planet_id}, socket) do
-    val = Resource.get(:iron)
-    IO.puts("#{val} iron")
-    {:noreply, socket}
-  end
-
-  @impl true
   def handle_event("add_robot", %{"planet" => planet_id}, socket) do
     handle_action_with_update(Planet.add_robot(String.to_atom(planet_id), 1), socket)
   end
@@ -276,7 +270,7 @@ defmodule SpaceCapitalismWeb.GameLive do
   # Upgrade events handler
   @impl true
   def handle_event("buy_upgrade", %{"upgrade" => upgrade_id}, socket) do
-    case GameSupervisor.buyUpgrade(upgrade_id) do
+    case UpgradeManager.buyUpgrade(upgrade_id) do
       {:ok, message} ->
         # Remove the purchased upgrade from available list
         updated_available_upgrades =
@@ -381,7 +375,7 @@ defmodule SpaceCapitalismWeb.GameLive do
 
   # Utility functions for upgrade management
   defp get_upgrade_info(upgrade_id) do
-    GameSupervisor.getUpgrade(upgrade_id)
+    UpgradeManager.getUpgrade(upgrade_id)
   end
 
   defp is_upgrade_available?(upgrade_id, purchased_upgrades) do
