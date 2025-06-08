@@ -194,7 +194,7 @@ defmodule EventManager do
 
   # Remove some robots from a planet
   defp robot_loss() do
-    owned_planets = PlanetSupervisor.getAllOwnedPlanets()
+    owned_planets = PlanetSupervisor.get_all_owned_planets()
 
     if length(owned_planets) > 0 do
       # Select a random planet
@@ -222,15 +222,17 @@ defmodule EventManager do
 
   # Collect the tax
   defp collect_tax() do
-    owned_planets = PlanetSupervisor.getAllOwnedPlanets()
+    owned_planets = PlanetSupervisor.get_all_owned_planets()
     planets_beyond_first = length(owned_planets) - 1
 
     if planets_beyond_first > 0 do
       # Exponential tax based on number planets other than Mars
       tax_amount = 1000 * :math.pow(2, planets_beyond_first)
-      current_money = Resource.get(:dG)
 
-      Resource.set(:dG, current_money - tax_amount)
+      # Add the maintenance cost
+      tax_amount = tax_amount + Resource.get(:robot_maintenance_cost)
+
+      Resource.safe_remove(:dG, tax_amount)
 
       broadcast_event(
         "INTERGALACTIC_TAX_COLLECTION :: #{tax_amount} $dG levied for #{planets_beyond_first} extra-territorial holdings. Compliance mandatory."

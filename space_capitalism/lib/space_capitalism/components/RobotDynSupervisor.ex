@@ -1,8 +1,17 @@
 defmodule RobotDynSupervisor do
   use DynamicSupervisor
 
+  @moduledoc """
+  This module handle the robot GenServer for one planet
+  """
+
+  @doc """
+  Start the DynamicSupervisor
+
+  ## Parameter
+  - planet: `atom` name of the planet that this instance will supervise
+  """
   def start_link(planet) do
-    IO.puts("RobotDynSupervisor #{planet}")
     DynamicSupervisor.start_link(__MODULE__, nil, name: planet)
   end
 
@@ -11,51 +20,31 @@ defmodule RobotDynSupervisor do
     DynamicSupervisor.init(strategy: :one_for_one)
   end
 
-  def upgrade_production_amount(resource, multiplier) do
-    # Upgrade the production amount of the robots
-    # This is a placeholder for actual implementation
-    IO.puts("Upgrading production amount of #{resource} by #{multiplier}x")
+  @doc """
+  Add some new workers (robots) to a planet
 
-    # Get all the planets with the provided resource
-    planets_with_resource =
-      Registry.select(PlanetRegistry, [{{:_, :"$1", :"$2"}, [], [:"$1"]}])
-      |> Enum.filter(fn planet_name ->
-        case Registry.lookup(PlanetRegistry, planet_name) do
-          [{pid, _}] ->
-            case GenServer.call(pid, :get_resource) do
-              ^resource -> true
-              _ -> false
-            end
-
-          [] ->
-            false
-        end
-      end)
-
-    Enum.each(planets_with_resource, fn planet_name ->
-      IO.puts("Upgrading robots on planet #{planet_name} for resource #{resource}")
-      # Here you would typically send a message to the robots to upgrade their production amount
-      children =
-        DynamicSupervisor.which_children(planet_name)
-        |> Enum.map(fn {_, pid, _, _} -> pid end)
-
-      Enum.each(children, fn pid ->
-        GenServer.cast(pid, {:upgrade_efficiency, multiplier})
-      end)
-    end)
-  end
-
-  # Ajouter un worker dynamiquement
+  ## Parameter
+  - planet: `atom` name of the planet
+  - count: `integer` number of worker to add
+  - resource: `atom` name of the resource that the worker will produce
+  - maintenance_cost: `integer` cost of maintenance of the robot
+  """
   def add_worker(planet, count, resource, maintenance_cost) do
     for x <- 1..count do
       IO.puts("add_worker #{planet} #{x}")
-
       DynamicSupervisor.start_child(planet, {Robot, {1000, resource}})
     end
 
-    ResourceSupervisor.addWorker(count, maintenance_cost)
+    ResourceSupervisor.add_worker(count, maintenance_cost)
   end
 
+  @doc """
+  Remove some worker (robot) from a planet
+
+  ## Parameter
+  - planet: `atom` name of the planet
+  - count: `integer` number of worker to remove
+  """
   def remove_worker(planet, count) do
     children =
       DynamicSupervisor.which_children(planet)

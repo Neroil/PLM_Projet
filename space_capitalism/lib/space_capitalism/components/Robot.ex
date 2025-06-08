@@ -1,30 +1,19 @@
 defmodule Robot do
   use GenServer
 
-  # Démarre le GenServer
+  @moduledoc """
+  This module handle the robot to mine resource on a planet
+  """
+
+  @doc """
+  Start the Robot GenServer
+  """
   def start_link({time, resource}) do
     GenServer.start_link(__MODULE__, %{time: time, resource: resource})
   end
 
-  # API functions for upgrading robots
-  def upgrade_efficiency(robot_pid, multiplier) do
-    GenServer.cast(robot_pid, {:upgrade_efficiency, multiplier})
-  end
-
-  def upgrade_speed(robot_pid, multiplier) do
-    GenServer.cast(robot_pid, {:upgrade_speed, multiplier})
-  end
-
-  def get_stats(robot_pid) do
-    GenServer.call(robot_pid, :get_stats)
-  end
-
-  # Callback pour initialiser l'état
   @impl true
   def init(state) do
-    # Démarre la boucle
-    # IO.puts("Bip boop, I am a robot !!")
-
     # Initialize with upgrade multipliers
     enhanced_state = Map.merge(state, %{
       efficiency_multiplier: 1.0,    # Affects resource yield
@@ -33,11 +22,53 @@ defmodule Robot do
       upgrade_level: 1               # Robot upgrade level
     })
 
+    # Start the recursive loop that make the robot collect resource
     Process.send_after(self(), :work, enhanced_state[:time])
+
     {:ok, enhanced_state}
   end
 
-  # Gère les messages : ici l'action et la récursion
+  @doc """
+  Upgarde the efficiency of the robot
+
+  ## Parameter
+  - robot_pid: Process Id of the robot
+  - multiplier: `float` the efficiency will be multiplied by this value
+  """
+  def upgrade_efficiency(robot_pid, multiplier) do
+    GenServer.cast(robot_pid, {:upgrade_efficiency, multiplier})
+  end
+
+  @doc """
+  Upgarde the speed of the robot
+
+  ## Parameter
+  - robot_pid: Process Id of the robot
+  - multiplier: `float` the speed will be multiplied by this value
+  """
+  def upgrade_speed(robot_pid, multiplier) do
+    GenServer.cast(robot_pid, {:upgrade_speed, multiplier})
+  end
+
+  @doc """
+  Get the statics of the robot
+
+  ## Parameter
+  - robot_pid: Process Id of the robot
+
+  ## Return
+  A map with the following keys:
+  - efficiency_multiplier
+  - speed_multiplier
+  - upgrade_level
+  - actual_yield
+  - work_interval
+  """
+  def get_stats(robot_pid) do
+    GenServer.call(robot_pid, :get_stats)
+  end
+
+  # Handle the work loop
   @impl true
   def handle_info(:work, state) do
     # Calculate actual yield based on base yield and efficiency multiplier

@@ -1,4 +1,9 @@
 defmodule PlanetRegistry do
+  @moduledoc """
+    This module help to register each Planet GenServer
+    with a specific name
+  """
+
   @registry_name __MODULE__
 
   def start_link do
@@ -11,9 +16,24 @@ end
 defmodule Planet do
   use GenServer
 
-  # Démarrer un Planet avec un nom et une ressource initiale
+  @moduledoc """
+    This module represent an in-game planet.
+  """
+
+  @doc """
+  Start the planet genserver
+
+  ## Parameter
+  A tuple containing :
+  - name: `atom` Name of the planet
+  - cost: `integer` Cost to buy the planet
+  - resource: `atom` Resource produced by the planet
+  - rbPrice: `integer` Price to add a robot on the planet
+  - rbMaintenance: `integer` Cost of maintenance of a robot
+  - is_owned: `boolean` Define if the player owns the planet or not
+  """
   def start_link({name, cost, resource, rbPrice, rbMaintenance, is_owned}) do
-    IO.puts("Planet #{name}")
+    # Start the supervisor to handle robot on this planet
     {:ok, pid} = RobotDynSupervisor.start_link(name)
 
     GenServer.start_link(
@@ -35,6 +55,7 @@ defmodule Planet do
   def init(state) do
     IO.puts("Planet process started: #{state[:name]}")
 
+    # Add informations to the base state
     initial_state =
       Map.merge(state, %{
         robot_count: 0,
@@ -57,73 +78,173 @@ defmodule Planet do
     base_cost * level * level
   end
 
+  # Get the Planet GenServer reference by his name
   defp via_tuple(name), do: {:via, Registry, {PlanetRegistry, name}}
 
-  # Get the resource from the planet
+  @doc """
+  Get the resource produced by the planet
+
+  ## Parameter
+  - name: `atom` name of the planet
+
+  ## Return
+  `atom` resource name
+  """
   def get_resource(name) do
-    IO.puts("Getting resource #{name}")
     GenServer.call(via_tuple(name), :get_resource)
   end
-  # API functions
+
+
+  @doc """
+  Add some robots to the planet
+
+  ## Parameter
+  - name: `atom` name of the planet
+  - count: `integer` number of robots to add
+  """
   def add_robot(name, count) do
     GenServer.call(via_tuple(name), {:add_robot, count})
   end
 
+  @doc """
+  Get the number of robot on the planet
+
+  ## Parameter
+  - name: `atom` name of the planet
+
+  ## Return
+  `integer` number of robots on the planet
+  """
   def get_robots(name) do
     IO.puts("Getting robots from #{name}")
     GenServer.call(via_tuple(name), :get_robots)
   end
 
+  @doc """
+  Get the cost of a robot on the planet
+
+  ## Parameter
+  - name: `atom` name of the planet
+
+  ## Return
+  `integer` robot cost
+  """
   def get_robot_cost(name) do
     IO.puts("Getting robot cost from #{name}")
     GenServer.call(via_tuple(name), :get_robot_cost)
   end
 
+  @doc """
+  Get the production rate of the robots
+  working on the planet
+
+  ## Parameter
+  - name: `atom` name of the planet
+
+  ## Return
+  `integer` production rate
+  """
   def get_production_rate(name) do
     GenServer.call(via_tuple(name), :get_production_rate)
   end
 
+  @doc """
+  Get the cost to upgrade the planet
+
+  ## Parameter
+  - name: `atom` name of the planet
+
+  ## Return
+  `integer` upgarde cost
+  """
   def get_upgrade_cost(name) do
     GenServer.call(via_tuple(name), :get_upgrade_cost)
   end
 
+  @doc """
+  Get if the planet is owned or not
+
+  ## Parameter
+  - name: `atom` name of the planet
+
+  ## Return
+  `boolean` true if owned, else false
+  """
   def get_owned(name) do
     GenServer.call(via_tuple(name), :get_owned)
   end
 
+  @doc """
+  Upgrade the planet
+
+  ## Parameter
+  - name: `atom` name of the planet
+  """
   def upgrade(name) do
     GenServer.cast(via_tuple(name), :upgrade)
   end
 
+  @doc """
+  Get the cost of the planet
+
+  ## Parameter
+  - name: `atom` name of the planet
+
+  ## Return
+  `integer` cost of the planet
+  """
   def get_cost(name) do
     GenServer.call(via_tuple(name), :get_cost)
   end
 
+  @doc """
+  Get all the information related to the planet
+
+  ## Parameter
+  - name: `atom` name of the planet
+
+  ## Return
+  `%{}` with the following keys:
+  - robot_count
+  - cost
+  - production_rate
+  - robot_price
+  - upgrade_cost
+  - owned
+  - resource
+  - level
+  """
   def get_all_data(name) do
     GenServer.call(via_tuple(name), :get_all_data)
   end
 
+  @doc """
+  Buy the planet
+
+  ## Parameter
+  - name: `atom` name of the planet
+  """
   def buy_planet(name) do
     GenServer.cast(via_tuple(name), :buy_planet)
   end
 
-  # GenServer callbacks
+  ### GenServer callbacks ###
+
   @impl true
   def handle_call(:get_resource, _from, state) do
-    IO.puts("Handling resource!")
     {:reply, state.resource, state}
   end
 
   @impl true
   def handle_call(:get_robots, _from, state) do
     # Get the actual robot count from the DynamicSupervisor
-    actual_robot_count = get_actual_robot_count(state[:name])
+    actual_robot_count = get_actual_robot_count(state.name)
     {:reply, actual_robot_count, state}
   end
 
   @impl true
   def handle_call(:get_robot_cost, _from, state) do
-    {:reply, state[:robot_price], state}
+    {:reply, state.robot_price, state}
   end
 
   @impl true
@@ -151,10 +272,12 @@ defmodule Planet do
   def handle_cast(:buy_planet, state) do
     if !state.owned do
       case Resource.remove(:dG, state.cost) do
+        # If there was enough money to buy
         {:ok, _} ->
           new_state = %{state | owned: true}
           {:noreply, new_state}
 
+        # If not enough money
         {:error, _} ->
           IO.puts("Not enough money to buy planet #{state.name}")
           {:noreply, state}
@@ -163,6 +286,7 @@ defmodule Planet do
       {:noreply, state}
     end
   end
+
   @impl true
   def handle_call({:add_robot, count}, _from, state) do
     total_cost = count * state[:robot_price]
@@ -170,6 +294,7 @@ defmodule Planet do
     # Check if enough money
     case Resource.remove(:dG, total_cost) do
       {:ok, _} ->
+        # Add robot to the supervisor
         RobotDynSupervisor.add_worker(
           state[:name],
           count,
@@ -177,6 +302,7 @@ defmodule Planet do
           state[:robot_maintenance]
         )
 
+        # Update the local state
         new_state = %{state | robot_count: state.robot_count + count}
         new_state = %{new_state | production_rate: calculate_production_rate(new_state)}
 
@@ -185,6 +311,7 @@ defmodule Planet do
 
         {:reply, {:ok, success_message}, new_state}
 
+      # If not enough money
       {:error, _} ->
         planet_name = to_string(state[:name]) |> String.upcase()
         error_message = "Insufficient funds to deploy robots to #{planet_name} (#{total_cost} $dG required)"

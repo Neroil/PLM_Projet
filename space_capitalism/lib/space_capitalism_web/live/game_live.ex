@@ -12,7 +12,7 @@ defmodule SpaceCapitalismWeb.GameLive do
     socket =
       assign(socket,
         page_title: "Space Capitalism",
-        resources: ResourceSupervisor.getAllResources(),
+        resources: ResourceSupervisor.get_all_resources(),
         planets: owned_planets,
         # Market prices
         available_planets: available_planets,
@@ -20,7 +20,7 @@ defmodule SpaceCapitalismWeb.GameLive do
 
         # Available technology upgrades - get from UpgradeManager
         available_upgrades:
-          UpgradeManager.getUpgrades()
+          UpgradeManager.get_upgrades()
           |> Enum.map(fn {id, upgrade} ->
             Map.put(upgrade, :id, id)
           end)
@@ -172,7 +172,7 @@ defmodule SpaceCapitalismWeb.GameLive do
   def handle_info(:updateDisplayOnClick, socket) do
     updated_socket =
       socket
-      |> assign(:resources, ResourceSupervisor.getAllResources())
+      |> assign(:resources, ResourceSupervisor.get_all_resources())
       |> update_planets_in_socket()
 
     {:noreply, updated_socket}
@@ -181,7 +181,7 @@ defmodule SpaceCapitalismWeb.GameLive do
   def handle_info(:updateDisplay, socket) do
     socket =
       socket
-      |> assign(:resources, ResourceSupervisor.getAllResources())
+      |> assign(:resources, ResourceSupervisor.get_all_resources())
       |> assign(:market, StockMarket.get_prices())
       |> update_planets_in_socket()
       |> assign(:tax_countdown, EventManager.get_next_tax_countdown())
@@ -259,7 +259,7 @@ defmodule SpaceCapitalismWeb.GameLive do
 
   @impl true
   def handle_event("buy_planet", %{"planet" => planet_name}, socket) do
-    handle_action_with_update(PlanetSupervisor.buyPlanet(planet_name), socket)
+    handle_action_with_update(PlanetSupervisor.buy_planet(planet_name), socket)
   end
 
   @impl true
@@ -270,7 +270,7 @@ defmodule SpaceCapitalismWeb.GameLive do
   # Upgrade events handler
   @impl true
   def handle_event("buy_upgrade", %{"upgrade" => upgrade_id}, socket) do
-    case UpgradeManager.buyUpgrade(upgrade_id) do
+    case UpgradeManager.buy_upgrade(upgrade_id) do
       {:ok, message} ->
         # Remove the purchased upgrade from available list
         updated_available_upgrades =
@@ -301,7 +301,7 @@ defmodule SpaceCapitalismWeb.GameLive do
 
   # Helper functions for planet management
   defp fetch_and_format_planets do
-    all_planets = PlanetSupervisor.getAllPlanets()
+    all_planets = PlanetSupervisor.get_all_planets()
     planets_list = Map.values(all_planets)
 
     owned_planets = format_owned_planets(planets_list)
@@ -375,7 +375,7 @@ defmodule SpaceCapitalismWeb.GameLive do
 
   # Utility functions for upgrade management
   defp get_upgrade_info(upgrade_id) do
-    UpgradeManager.getUpgrade(upgrade_id)
+    UpgradeManager.get_upgrade(upgrade_id)
   end
 
   defp is_upgrade_available?(upgrade_id, purchased_upgrades) do

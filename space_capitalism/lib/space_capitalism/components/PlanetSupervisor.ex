@@ -2,12 +2,51 @@ defmodule PlanetSupervisor do
   alias ElixirSense.Log
   use Supervisor
 
+  @moduledoc """
+  Supervisor to handle the planet GenServer
+  """
+
+  @doc """
+  Start the PlanetSupervisor
+  """
   def start_link(_) do
-    IO.puts("PlanetSupervisor")
     Supervisor.start_link(__MODULE__, nil, name: __MODULE__)
   end
 
-  def getPlanets() do
+  @impl true
+  def init(_) do
+    children =
+      [
+        # PlanetRegistry
+        %{start: {PlanetRegistry, :start_link, []}, id: PlanetRegistry}
+      ] ++
+        # All the planets
+        Enum.map(get_planets(), fn {name, cost, resource_type, base_cost, base_production,
+                                   is_owned} ->
+          %{
+            start:
+              {Planet, :start_link,
+               [{name, cost, resource_type, base_cost, base_production, is_owned}]},
+            id: name
+          }
+        end)
+
+    Supervisor.init(children, strategy: :one_for_one)
+  end
+
+  @doc """
+  Get a list of all the planet available in the game and theirs inital values
+
+  ## Return
+  A list of tuple like `{name, cost, resource, rbPrice, ???, owned}`
+  - name: `atom` name of the planet
+  - cost: `integer` cost of the planet
+  - resource: `atom` name of the resource
+  - rbPrice: `integer` Price of a robot on the planet
+  - ???
+  - owned: `boolean` true if the planet is owned by the player, otherwise false
+  """
+  def get_planets() do
     [
       {:mars, 0, :iron, 100, 100, true},
       {:proxima, 5_000, :gold, 500, 120, false},
@@ -22,15 +61,33 @@ defmodule PlanetSupervisor do
     ]
   end
 
-  def getAllOwnedPlanets() do
-    Enum.filter(getPlanets(), fn {_name, _cost, _resource_type, _base_cost, _base_production,
+  @doc """
+  Like `get_planets()` but return only the planets where `owned` is true
+  """
+  def get_all_owned_planets() do
+    Enum.filter(get_planets(), fn {_name, _cost, _resource_type, _base_cost, _base_production,
                                   is_owned} ->
       is_owned
     end)
   end
 
-  def getAllPlanets() do
-    Enum.map(getPlanets(), fn {name, cost, resource_type, _base_cost, _base_production, _is_owned} ->
+  @doc """
+  Get the list of the planet with theirs actual data
+
+  ## Return
+  A map with as key the planet's name as `atom` and value another map with keys:
+  - id
+  - cost
+  - name
+  - resource_type
+  - robots
+  - production_rate
+  - robot_cost
+  - upgrade_cost
+  - owned
+  """
+  def get_all_planets() do
+    Enum.map(get_planets(), fn {name, cost, resource_type, _base_cost, _base_production, _is_owned} ->
       planet_data = Planet.get_all_data(name)
 
       {
@@ -51,29 +108,18 @@ defmodule PlanetSupervisor do
     |> Enum.into(%{})
   end
 
-  # Helper function to get a planet by its name
-  def getAtom(string) do
+  @doc """
+  Buy a planet that then belongs to the
+
+  ## Parameter
+  - planet_strin: `string` planet's name
+  """
+  def buy_planet(planet_string) do
     # Convert planet_id into atom
-    id =
-      if is_binary(string), do: String.to_existing_atom(string), else: string
-  end
-
-  def addRobot(planet_id, count \\ 1) do
-    # Cast to atom if string
-    Planet.add_robot(getAtom(planet_id), count)
-    IO.puts("Added #{count} robots to planet #{getAtom(planet_id)}")
-  end
-
-  def upgradePlanet(planet_id) do
-    Planet.upgrade(getAtom(planet_id))
-  end
-
-  def buyPlanet(planet_string) do
-    # Convert planet_id into atom
-    planet_id = getAtom(planet_string)
+    planet_id = get_atom(planet_string)
 
     # Check if planet exists
-    case Enum.find(getPlanets(), fn {name, _, _, _, _, _} -> name == planet_id end) do
+    case Enum.find(get_planets(), fn {name, _, _, _, _, _} -> name == planet_id end) do
       nil ->
         {:error, "Planet #{planet_id} does not exist"}
 
@@ -81,36 +127,24 @@ defmodule PlanetSupervisor do
         if is_owned do
           {:error, "Planet #{planet_id} is already owned"}
         else
-          # Get current money
-          case Resource.get(:dG) do
-            money when money >= cost ->
-              # Call the Planet module to handle the purchase
+          # Try buying
+          case Resource.remove(:dG, cost) do
+            {:ok, _} ->
               Planet.buy_planet(planet_id)
               {:ok, "Planet #{planet_id} purchased successfully"}
 
-            _ ->
+            {:error, _}  ->
               {:error, "Not enough money to buy planet #{planet_id}"}
           end
         end
     end
   end
 
-  @impl true
-  def init(_) do
-    children =
-      [
-        %{start: {PlanetRegistry, :start_link, []}, id: PlanetRegistry}
-      ] ++
-        Enum.map(getPlanets(), fn {name, cost, resource_type, base_cost, base_production,
-                                   is_owned} ->
-          %{
-            start:
-              {Planet, :start_link,
-               [{name, cost, resource_type, base_cost, base_production, is_owned}]},
-            id: name
-          }
-        end)
-
-    Supervisor.init(children, strategy: :one_for_one)
+  # Helper function to get a planet by its name
+  defp get_atom(string) do
+    # Convert planet_id into atom
+    id =
+      if is_binary(string), do: String.to_existing_atom(string), else: string
   end
+
 end
