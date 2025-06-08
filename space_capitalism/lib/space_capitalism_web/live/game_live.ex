@@ -93,6 +93,136 @@ defmodule SpaceCapitalismWeb.GameLive do
     {:noreply, assign(socket, :events, new_events)}
   end
 
+  def handle_info(:updateDisplayOnClick, socket) do
+    updated_socket =
+      socket
+      |> assign(:resources, ResourceSupervisor.get_all_resources())
+      |> update_planets_in_socket()
+
+    {:noreply, updated_socket}
+  end
+
+  def handle_info(:updateDisplay, socket) do
+    socket =
+      socket
+      |> assign(:resources, ResourceSupervisor.get_all_resources())
+      |> assign(:market, StockMarket.get_prices())
+      |> update_planets_in_socket()
+      |> assign(:tax_countdown, EventManager.get_next_tax_countdown())
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("sell_form_change", %{"quantity" => quantity, "resource" => resource}, socket) do
+    handle_form_change(quantity, resource, socket, "sell")
+  end
+
+  @impl true
+  def handle_event("buy_form_change", %{"quantity" => quantity, "resource" => resource}, socket) do
+    handle_form_change(quantity, resource, socket, "buy")
+  end
+
+  @impl true
+  def handle_event("toggle_vm_stats", _params, socket) do
+    {:noreply, assign(socket, :vm_stats_minimized, !socket.assigns.vm_stats_minimized)}
+  end
+
+  def handle_event("buy_resource", %{"resource" => resource, "quantity" => quantity}, socket) do
+    handle_resource_transaction(resource, quantity, socket, false)
+  end
+
+  def handle_event("sell_resource", %{"resource" => resource, "quantity" => quantity}, socket) do
+    handle_resource_transaction(resource, quantity, socket, true)
+  end
+
+  @impl true
+  def handle_event("buy_planet", %{"planet" => planet_name}, socket) do
+    handle_action_with_update(PlanetSupervisor.buy_planet(planet_name), socket)
+  end
+
+  @impl true
+  def handle_event("add_robot", %{"planet" => planet_id}, socket) do
+    handle_action_with_update(Planet.add_robot(String.to_atom(planet_id), 1), socket)
+  end
+
+  # Upgrade events handler
+  @impl true
+  def handle_event("buy_upgrade", %{"upgrade" => upgrade_id}, socket) do
+    case UpgradeManager.buy_upgrade(upgrade_id) do
+      {:ok, message} ->
+        # Remove the purchased upgrade from available list
+        updated_available_upgrades =
+          Enum.filter(socket.assigns.available_upgrades, fn upgrade ->
+            upgrade.id != upgrade_id
+          end)
+
+        # Add to purchased upgrades list
+        updated_purchased_upgrades = [upgrade_id | socket.assigns.purchased_upgrades]
+
+        # Update the planets list and upgrade state
+        send(self(), :updateDisplayOnClick)
+
+        socket
+        |> assign(:available_upgrades, updated_available_upgrades)
+        |> assign(:purchased_upgrades, updated_purchased_upgrades)
+        |> put_flash(:info, message)
+        |> then(&{:noreply, &1})
+
+      {:error, reason} ->
+        {:noreply, put_flash(socket, :error, reason)}
+
+      # Fallback for any other response format
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
+  # Private function to handle both buying and selling resources
+  defp handle_resource_transaction(resource, quantity, socket, is_selling) do
+    if resource == "" or quantity == "" do
+      {:noreply, put_flash(socket, :error, "Resource and quantity must not be empty")}
+    else
+      try do
+        quantity_int = String.to_integer(quantity)
+
+        if quantity_int <= 0 do
+          {:noreply, put_flash(socket, :error, "Quantity must be greater than 0")}
+        else
+          # Perform the transaction
+          result =
+            if is_selling do
+              StockMarket.sell(String.to_atom(resource), quantity_int)
+            else
+              StockMarket.buy(String.to_atom(resource), quantity_int)
+            end
+
+          case result do
+            {:ok, message} ->
+              # Clear the appropriate form value after successful transaction
+              form_type = if is_selling, do: "sell", else: "buy"
+              form_key = "#{resource}_#{form_type}_quantity"
+              new_form_values = Map.delete(socket.assigns.form_values, form_key)
+
+              socket
+              |> assign(:form_values, new_form_values)
+              |> put_flash(:info, message)
+              |> then(&{:noreply, &1})
+
+            {:error, error_message} ->
+              {:noreply, put_flash(socket, :error, error_message)}
+
+            _ ->
+              {:noreply, put_flash(socket, :error, "Transaction failed due to unknown error")}
+          end
+        end
+      rescue
+        ArgumentError ->
+          {:noreply, put_flash(socket, :error, "Invalid quantity format")}
+      end
+    end
+  end
+
   defp format_number(number) when is_integer(number) do
     cond do
       number >= 1_000_000 -> "#{div(number, 1_000_000)}M"
@@ -169,135 +299,6 @@ defmodule SpaceCapitalismWeb.GameLive do
     end
   end
 
-  def handle_info(:updateDisplayOnClick, socket) do
-    updated_socket =
-      socket
-      |> assign(:resources, ResourceSupervisor.get_all_resources())
-      |> update_planets_in_socket()
-
-    {:noreply, updated_socket}
-  end
-
-  def handle_info(:updateDisplay, socket) do
-    socket =
-      socket
-      |> assign(:resources, ResourceSupervisor.get_all_resources())
-      |> assign(:market, StockMarket.get_prices())
-      |> update_planets_in_socket()
-      |> assign(:tax_countdown, EventManager.get_next_tax_countdown())
-
-    {:noreply, socket}
-  end
-
-  @impl true
-  def handle_event("sell_form_change", %{"quantity" => quantity, "resource" => resource}, socket) do
-    handle_form_change(quantity, resource, socket, "sell")
-  end
-
-  @impl true
-  def handle_event("buy_form_change", %{"quantity" => quantity, "resource" => resource}, socket) do
-    handle_form_change(quantity, resource, socket, "buy")
-  end
-
-  @impl true
-  def handle_event("toggle_vm_stats", _params, socket) do
-    {:noreply, assign(socket, :vm_stats_minimized, !socket.assigns.vm_stats_minimized)}
-  end
-
-  def handle_event("buy_resource", %{"resource" => resource, "quantity" => quantity}, socket) do
-    handle_resource_transaction(resource, quantity, socket, false)
-  end
-
-  def handle_event("sell_resource", %{"resource" => resource, "quantity" => quantity}, socket) do
-    handle_resource_transaction(resource, quantity, socket, true)
-  end
-
-  # Private function to handle both buying and selling resources
-  defp handle_resource_transaction(resource, quantity, socket, is_selling) do
-    if resource == "" or quantity == "" do
-      {:noreply, put_flash(socket, :error, "Resource and quantity must not be empty")}
-    else
-      try do
-        quantity_int = String.to_integer(quantity)
-
-        if quantity_int <= 0 do
-          {:noreply, put_flash(socket, :error, "Quantity must be greater than 0")}
-        else
-          # Perform the transaction
-          result =
-            if is_selling do
-              StockMarket.sell(String.to_atom(resource), quantity_int)
-            else
-              StockMarket.buy(String.to_atom(resource), quantity_int)
-            end
-
-          case result do
-            {:ok, message} ->
-              # Clear the appropriate form value after successful transaction
-              form_type = if is_selling, do: "sell", else: "buy"
-              form_key = "#{resource}_#{form_type}_quantity"
-              new_form_values = Map.delete(socket.assigns.form_values, form_key)
-
-              socket
-              |> assign(:form_values, new_form_values)
-              |> put_flash(:info, message)
-              |> then(&{:noreply, &1})
-
-            {:error, error_message} ->
-              {:noreply, put_flash(socket, :error, error_message)}
-
-            _ ->
-              {:noreply, put_flash(socket, :error, "Transaction failed due to unknown error")}
-          end
-        end
-      rescue
-        ArgumentError ->
-          {:noreply, put_flash(socket, :error, "Invalid quantity format")}
-      end
-    end
-  end
-
-  @impl true
-  def handle_event("buy_planet", %{"planet" => planet_name}, socket) do
-    handle_action_with_update(PlanetSupervisor.buy_planet(planet_name), socket)
-  end
-
-  @impl true
-  def handle_event("add_robot", %{"planet" => planet_id}, socket) do
-    handle_action_with_update(Planet.add_robot(String.to_atom(planet_id), 1), socket)
-  end
-
-  # Upgrade events handler
-  @impl true
-  def handle_event("buy_upgrade", %{"upgrade" => upgrade_id}, socket) do
-    case UpgradeManager.buy_upgrade(upgrade_id) do
-      {:ok, message} ->
-        # Remove the purchased upgrade from available list
-        updated_available_upgrades =
-          Enum.filter(socket.assigns.available_upgrades, fn upgrade ->
-            upgrade.id != upgrade_id
-          end)
-
-        # Add to purchased upgrades list
-        updated_purchased_upgrades = [upgrade_id | socket.assigns.purchased_upgrades]
-
-        # Update the planets list and upgrade state
-        send(self(), :updateDisplayOnClick)
-
-        socket
-        |> assign(:available_upgrades, updated_available_upgrades)
-        |> assign(:purchased_upgrades, updated_purchased_upgrades)
-        |> put_flash(:info, message)
-        |> then(&{:noreply, &1})
-
-      {:error, reason} ->
-        {:noreply, put_flash(socket, :error, reason)}
-
-      # Fallback for any other response format
-      _ ->
-        {:noreply, socket}
-    end
-  end
 
   # Helper functions for planet management
   defp fetch_and_format_planets do
@@ -370,22 +371,6 @@ defmodule SpaceCapitalismWeb.GameLive do
 
       _ ->
         {:noreply, socket}
-    end
-  end
-
-  # Utility functions for upgrade management
-  defp get_upgrade_info(upgrade_id) do
-    UpgradeManager.get_upgrade(upgrade_id)
-  end
-
-  defp is_upgrade_available?(upgrade_id, purchased_upgrades) do
-    !Enum.member?(purchased_upgrades, upgrade_id)
-  end
-
-  defp can_afford_upgrade?(upgrade_id) do
-    case get_upgrade_info(upgrade_id) do
-      nil -> false
-      upgrade -> Resource.get(:dG) >= upgrade.cost
     end
   end
 end

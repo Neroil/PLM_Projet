@@ -75,12 +75,6 @@ defmodule StockMarket do
     GenServer.cast(__MODULE__, {:update, resource, difference})
   end
 
-  # Handle the prices get
-  @impl true
-  def handle_call(:get_prices, _from, state) do
-    {:reply, state, state}
-  end
-
   # Handle the price update
   @impl true
   def handle_cast({:update, resource, difference}, state) do
@@ -90,6 +84,12 @@ defmodule StockMarket do
       Map.put(state, resource, %{price: state[resource][:price] + difference, trend: trend})
 
     {:noreply, new_state}
+  end
+
+  # Handle the prices get
+  @impl true
+  def handle_call(:get_prices, _from, state) do
+    {:reply, state, state}
   end
 
   # Handle a selling transaction

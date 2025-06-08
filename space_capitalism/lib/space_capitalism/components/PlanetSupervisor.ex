@@ -1,5 +1,4 @@
 defmodule PlanetSupervisor do
-  alias ElixirSense.Log
   use Supervisor
 
   @moduledoc """
@@ -143,8 +142,7 @@ defmodule PlanetSupervisor do
   # Helper function to get a planet by its name
   defp get_atom(string) do
     # Convert planet_id into atom
-    id =
-      if is_binary(string), do: String.to_existing_atom(string), else: string
+    if is_binary(string), do: String.to_existing_atom(string), else: string
   end
 
 end

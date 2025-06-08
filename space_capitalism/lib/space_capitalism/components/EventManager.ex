@@ -6,11 +6,6 @@ defmodule EventManager do
   that may happen during the game and the tax collection.
   """
 
-  import StockMarket
-  import Resource
-  import RobotDynSupervisor
-  import PlanetSupervisor
-
   alias Phoenix.PubSub
 
   @tax_collection_time 300_000
@@ -139,7 +134,7 @@ defmodule EventManager do
     percentage_display = Float.round(increase_percentage * 100, 1)
 
     # Apply the augmentation
-    for {resource, %{price: price, trend: trend}} <- StockMarket.get_prices() do
+    for {resource, %{price: price, trend: _trend}} <- StockMarket.get_prices() do
       StockMarket.update(resource, round(price * increase_percentage))
     end
 
@@ -155,7 +150,7 @@ defmodule EventManager do
     percentage_display = Float.round(decrease_percentage * 100, 1)
 
     # Apply it
-    for {resource, %{price: price, trend: trend}} <- StockMarket.get_prices() do
+    for {resource, %{price: price, trend: _trend}} <- StockMarket.get_prices() do
       StockMarket.update(resource, -round(price * decrease_percentage))
     end
 

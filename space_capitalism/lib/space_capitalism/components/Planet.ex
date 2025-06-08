@@ -269,25 +269,6 @@ defmodule Planet do
   end
 
   @impl true
-  def handle_cast(:buy_planet, state) do
-    if !state.owned do
-      case Resource.remove(:dG, state.cost) do
-        # If there was enough money to buy
-        {:ok, _} ->
-          new_state = %{state | owned: true}
-          {:noreply, new_state}
-
-        # If not enough money
-        {:error, _} ->
-          IO.puts("Not enough money to buy planet #{state.name}")
-          {:noreply, state}
-      end
-    else
-      {:noreply, state}
-    end
-  end
-
-  @impl true
   def handle_call({:add_robot, count}, _from, state) do
     total_cost = count * state[:robot_price]
 
@@ -316,24 +297,6 @@ defmodule Planet do
         planet_name = to_string(state[:name]) |> String.upcase()
         error_message = "Insufficient funds to deploy robots to #{planet_name} (#{total_cost} $dG required)"
         {:reply, {:error, error_message}, state}
-    end
-  end
-
-  @impl true
-  def handle_cast(:upgrade, state) do
-    # Implement upgrade logic with cost
-    upgrade_cost = calculate_upgrade_cost(state.level)
-
-    case Resource.remove(:dG, upgrade_cost) do
-      {:ok, _} ->
-        new_state = %{state | level: state.level + 1}
-        # Update production rate after upgrading
-        new_state = %{new_state | production_rate: calculate_production_rate(new_state)}
-        {:noreply, new_state}
-
-      {:error, _} ->
-        IO.puts("Not enough money for upgrade")
-        {:noreply, state}
     end
   end
 
@@ -367,6 +330,43 @@ defmodule Planet do
     }
 
     {:reply, data, updated_state}
+  end
+
+  @impl true
+  def handle_cast(:upgrade, state) do
+    # Implement upgrade logic with cost
+    upgrade_cost = calculate_upgrade_cost(state.level)
+
+    case Resource.remove(:dG, upgrade_cost) do
+      {:ok, _} ->
+        new_state = %{state | level: state.level + 1}
+        # Update production rate after upgrading
+        new_state = %{new_state | production_rate: calculate_production_rate(new_state)}
+        {:noreply, new_state}
+
+      {:error, _} ->
+        IO.puts("Not enough money for upgrade")
+        {:noreply, state}
+    end
+  end
+
+  @impl true
+  def handle_cast(:buy_planet, state) do
+    if !state.owned do
+      case Resource.remove(:dG, state.cost) do
+        # If there was enough money to buy
+        {:ok, _} ->
+          new_state = %{state | owned: true}
+          {:noreply, new_state}
+
+        # If not enough money
+        {:error, _} ->
+          IO.puts("Not enough money to buy planet #{state.name}")
+          {:noreply, state}
+      end
+    else
+      {:noreply, state}
+    end
   end
 
   # Get the actual number of robot processes from the DynamicSupervisor
