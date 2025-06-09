@@ -98,9 +98,9 @@ defmodule EventManager do
 
     {:reply, remaining_seconds, state}
   end
-
-  # Apply the effect of an event
-  # event: Atom containing the event name
+  # Apply the effect of a random event
+  # Executes specific event logic based on the event type
+  # event: Atom containing the event name (:market_up, :market_down, :money_loss, :money_gain, :robot_loss)
   defp apply_event(event) do
     IO.puts("#{event} is happening")
 
@@ -121,13 +121,14 @@ defmodule EventManager do
         robot_loss()
     end
   end
-
-  # Broadcast a message to the frontend to be displayed
+  # Broadcast a galactic event message to the frontend via PubSub
+  # This displays event notifications to players in real-time
+  # message: String containing the event description to broadcast
   defp broadcast_event(message) do
     PubSub.broadcast(SpaceCapitalism.PubSub, "galactic_events", {:galactic_event, message})
   end
-
-  # Increase the prices of the market
+  # Increase market prices across all commodities
+  # Random price surge between 3% and 8% to simulate market volatility
   defp market_up() do
     # Random increase between 3% and 8%
     increase_percentage = :rand.uniform_real() * 0.05 + 0.03
@@ -142,8 +143,8 @@ defmodule EventManager do
       "MARKET_SURGE_DETECTED :: Galactic Trade Federation reports #{percentage_display}% price elevation across all commodity sectors. Corporate profits soaring."
     )
   end
-
-  # Decrease the prices of the market
+  # Decrease market prices across all commodities
+  # Random price decline between 5% and 12% to simulate economic recession
   defp market_down() do
     # Random decrease between 5% and 12%
     decrease_percentage = :rand.uniform_real() * 0.07 + 0.05
@@ -158,8 +159,8 @@ defmodule EventManager do
       "RECESSION_PROTOCOL_ACTIVE :: Emergency economic measures triggered. All commodity values declining #{percentage_display}%. Secure liquid assets immediately."
     )
   end
-
-  # Removes money from the player
+  # Remove money from the player's account due to emergency taxation
+  # Random loss between 5% and 15% of current money to add financial pressure
   defp money_loss() do
     current_money = Resource.get(:dG)
     # Random loss between 5% and 15%
@@ -172,8 +173,8 @@ defmodule EventManager do
       "FISCAL_AUDIT_NOTICE :: Intergalactic Revenue Service has imposed emergency taxation. #{loss_amount} $dG debited per Regulation X-74."
     )
   end
-
-  # Gives money to the player
+  # Award money to the player through corporate subsidies
+  # Random gain between 2% and 8% of current money as expansion incentive
   defp money_gain() do
     current_money = Resource.get(:dG)
     # Random gain between 2% and 8%
@@ -186,8 +187,8 @@ defmodule EventManager do
       "COLONIAL_SUBSIDY_RECEIVED :: Corporate expansion incentive deposited. #{gain_amount} $dG approved for frontier operations."
     )
   end
-
-  # Remove some robots from a planet
+  # Remove robots from a random owned planet due to solar flare interference
+  # Number of robots lost equals the total number of owned planets (scaling difficulty)
   defp robot_loss() do
     owned_planets = PlanetSupervisor.get_all_owned_planets()
 
@@ -214,8 +215,9 @@ defmodule EventManager do
     end
   end
 
-
-  # Collect the tax
+  # Collect intergalactic taxes from the player every 5 minutes
+  # Tax amount: 1000 * 2^(extra_planets) + robot_maintenance_cost
+  # Exponential scaling makes owning many planets expensive
   defp collect_tax() do
     owned_planets = PlanetSupervisor.get_all_owned_planets()
     planets_beyond_first = length(owned_planets) - 1

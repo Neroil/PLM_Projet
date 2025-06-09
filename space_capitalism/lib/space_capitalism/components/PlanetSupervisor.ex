@@ -37,12 +37,12 @@ defmodule PlanetSupervisor do
   Get a list of all the planet available in the game and theirs inital values
 
   ## Return
-  A list of tuple like `{name, cost, resource, rbPrice, ???, owned}`
+  A list of tuple like `{name, cost, resource, rbPrice, rbMaintenance, owned}`
   - name: `atom` name of the planet
   - cost: `integer` cost of the planet
   - resource: `atom` name of the resource
   - rbPrice: `integer` Price of a robot on the planet
-  - ???
+  - rbMaintenance: `integer` Cost of maintenance of a robot
   - owned: `boolean` true if the planet is owned by the player, otherwise false
   """
   def get_planets() do
@@ -138,8 +138,8 @@ defmodule PlanetSupervisor do
         end
     end
   end
-
   # Helper function to get a planet by its name
+  # Converts string to existing atom if input is binary, otherwise returns as-is
   defp get_atom(string) do
     # Convert planet_id into atom
     if is_binary(string), do: String.to_existing_atom(string), else: string

@@ -137,8 +137,8 @@ defmodule StockMarket do
     Process.send_after(self(), :randomize_prices, generate_random_time())
     {:noreply, state}
   end
-
-  # Generate a random new price base on the actual price
+  # Generate a random new price variation based on the actual price
+  # Returns a value between -100 and +100, but ensures price never goes negative
   defp generate_new_price(actual_price) do
     newVal = Enum.random(0..200) - 100
 
@@ -149,7 +149,8 @@ defmodule StockMarket do
     end
   end
 
-  # generate a random time for the next prices's variation
+  # Generate a random time interval for the next price variation
+  # Returns a time in milliseconds between 10 and 45 seconds
   defp generate_random_time() do
     Enum.random(10..45) * 1000
   end

@@ -61,8 +61,8 @@ defmodule ResourceSupervisor do
     )
     |> Enum.into(%{})
   end
-
-  # Set intial resources for the game
+  # Set initial resources for the game
+  # Defines starting amounts for each resource type
   defp set_initial_resources(res) do
     case res do
       :iron -> 5

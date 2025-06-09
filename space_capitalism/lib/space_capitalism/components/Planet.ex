@@ -65,20 +65,21 @@ defmodule Planet do
 
     {:ok, initial_state}
   end
-
   # Calculate the production rate based on robot count and level
+  # Formula: base_rate + (robot_count * level)
   defp calculate_production_rate(state) do
     base_rate = 10
     base_rate + (state[:robot_count] || 0) * (state[:level] || 1)
   end
 
   # Calculate the upgrade cost based on current level
+  # Formula: base_cost * level^2 (quadratic scaling)
   defp calculate_upgrade_cost(level) do
     base_cost = 500
     base_cost * level * level
   end
 
-  # Get the Planet GenServer reference by his name
+  # Get the Planet GenServer reference by his name using Registry
   defp via_tuple(name), do: {:via, Registry, {PlanetRegistry, name}}
 
   @doc """
@@ -368,8 +369,8 @@ defmodule Planet do
       {:noreply, state}
     end
   end
-
   # Get the actual number of robot processes from the DynamicSupervisor
+  # This function ensures consistency between the state and actual running processes
   defp get_actual_robot_count(planet_name) do
     try do
       DynamicSupervisor.which_children(planet_name)

@@ -177,8 +177,13 @@ defmodule SpaceCapitalismWeb.GameLive do
         {:noreply, socket}
     end
   end
-
   # Private function to handle both buying and selling resources
+  # Validates input, performs transaction, and updates UI with appropriate flash messages
+  # Parameters:
+  # - resource: string name of the resource
+  # - quantity: string quantity to trade
+  # - socket: LiveView socket
+  # - is_selling: boolean indicating if this is a sell (true) or buy (false) operation
   defp handle_resource_transaction(resource, quantity, socket, is_selling) do
     if resource == "" or quantity == "" do
       {:noreply, put_flash(socket, :error, "Resource and quantity must not be empty")}
@@ -222,7 +227,7 @@ defmodule SpaceCapitalismWeb.GameLive do
       end
     end
   end
-
+  # Format large numbers for display (converts to K/M notation for readability)
   defp format_number(number) when is_integer(number) do
     cond do
       number >= 1_000_000 -> "#{div(number, 1_000_000)}M"
@@ -231,13 +236,13 @@ defmodule SpaceCapitalismWeb.GameLive do
     end
   end
 
-  # Handle floats
+  # Handle floats by rounding to integer first
   defp format_number(number) when is_float(number) do
     number = round(number)
     format_number(number)
   end
 
-  # Handle values that are already strings
+  # Handle values that are already strings (pass through)
   defp format_number(number) when is_binary(number) do
     number
   end
@@ -247,6 +252,7 @@ defmodule SpaceCapitalismWeb.GameLive do
     "N/A"
   end
 
+  # Format countdown timer in MM:SS format
   defp format_countdown(seconds) when is_integer(seconds) and seconds >= 0 do
     minutes = div(seconds, 60)
     remaining_seconds = rem(seconds, 60)
@@ -256,6 +262,9 @@ defmodule SpaceCapitalismWeb.GameLive do
 
   defp format_countdown(_), do: "00:00"
 
+  # Collect comprehensive BEAM VM statistics for system monitoring
+  # Returns a map with process counts, memory usage, scheduler info, and performance metrics
+  # Used for the real-time system monitor display in the game UI
   defp get_vm_stats do
     %{
       process_count: Process.list() |> length(),
@@ -276,6 +285,9 @@ defmodule SpaceCapitalismWeb.GameLive do
     }
   end
 
+  # Calculate the current BEAM VM reductions per second
+  # Tracks execution performance by measuring reduction differences over time
+  # Uses process dictionary to store previous measurements for delta calculation
   defp get_reductions_per_second do
     current_time = :erlang.monotonic_time(:millisecond)
     {current_reductions, _} = :erlang.statistics(:reductions)
@@ -299,8 +311,9 @@ defmodule SpaceCapitalismWeb.GameLive do
     end
   end
 
-
-  # Helper functions for planet management
+  # Fetch and format planet data for UI display
+  # Returns a tuple of {owned_planets, available_planets} with formatted data structures
+  # Separates planets based on ownership status for different UI sections
   defp fetch_and_format_planets do
     all_planets = PlanetSupervisor.get_all_planets()
     planets_list = Map.values(all_planets)
@@ -311,12 +324,16 @@ defmodule SpaceCapitalismWeb.GameLive do
     {owned_planets, available_planets}
   end
 
+  # Filter and format owned planets for the planet management UI
+  # Includes production statistics, robot counts, and upgrade costs
   defp format_owned_planets(planets_list) do
     planets_list
     |> Enum.filter(fn planet -> planet.owned end)
     |> Enum.map(&format_owned_planet/1)
   end
 
+  # Filter and format available planets for the colonization UI
+  # Shows basic planet info and purchase costs for unowned planets
   defp format_available_planets(planets_list) do
     planets_list
     |> Enum.filter(fn planet -> !planet.owned end)
@@ -324,6 +341,8 @@ defmodule SpaceCapitalismWeb.GameLive do
     |> Enum.sort_by(& &1.cost, :asc)
   end
 
+  # Format owned planet data for UI display
+  # Includes operational statistics like robot count, production rate, and costs
   defp format_owned_planet(planet) do
     %{
       id: planet.id,
@@ -336,6 +355,8 @@ defmodule SpaceCapitalismWeb.GameLive do
     }
   end
 
+  # Format available planet data for colonization UI
+  # Shows essential info needed for purchase decisions: name, resource type, and cost
   defp format_available_planet(planet) do
     %{
       id: planet.id,
@@ -345,6 +366,8 @@ defmodule SpaceCapitalismWeb.GameLive do
     }
   end
 
+  # Update planet data in the LiveView socket
+  # Refreshes both owned and available planets lists for UI consistency
   defp update_planets_in_socket(socket) do
     {owned_planets, available_planets} = fetch_and_format_planets()
 
@@ -353,12 +376,21 @@ defmodule SpaceCapitalismWeb.GameLive do
     |> assign(:available_planets, available_planets)
   end
 
+  # Handle form input changes for resource trading
+  # Maintains form state across re-renders by storing values in socket assigns
+  # Parameters: quantity, resource name, socket, form_type ("buy" or "sell")
   defp handle_form_change(quantity, resource, socket, form_type) do
     form_key = "#{resource}_#{form_type}_quantity"
     new_form_values = Map.put(socket.assigns.form_values, form_key, quantity)
     {:noreply, assign(socket, :form_values, new_form_values)}
   end
 
+  # Handle action results with automatic UI updates and flash messages
+  # Standardizes error/success handling for game actions like buying planets or resources
+  # Parameters:
+  # - action_result: tuple {:ok, message} or {:error, reason}
+  # - socket: LiveView socket
+  # - success_message_override: optional custom success message
   defp handle_action_with_update(action_result, socket, success_message_override \\ nil) do
     case action_result do
       {:ok, message} ->
