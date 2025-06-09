@@ -53,7 +53,7 @@ defmodule SpaceCapitalismWeb.GameLive do
 
     # Start the function to update display
     # Enable scheduler utilization tracking
-    :timer.send_interval(200, self(), :updateDisplay)
+    :timer.send_interval(200, self(), :update_display)
     :erlang.system_flag(:scheduler_wall_time, true)
 
     # Start VM stats update timer
@@ -93,7 +93,7 @@ defmodule SpaceCapitalismWeb.GameLive do
     {:noreply, assign(socket, :events, new_events)}
   end
 
-  def handle_info(:updateDisplayOnClick, socket) do
+  def handle_info(:update_display_on_click, socket) do
     updated_socket =
       socket
       |> assign(:resources, ResourceSupervisor.get_all_resources())
@@ -104,7 +104,7 @@ defmodule SpaceCapitalismWeb.GameLive do
     {:noreply, updated_socket}
   end
 
-  def handle_info(:updateDisplay, socket) do
+  def handle_info(:update_display, socket) do
     socket =
       socket
       |> assign(:resources, ResourceSupervisor.get_all_resources())
@@ -211,7 +211,7 @@ defmodule SpaceCapitalismWeb.GameLive do
         updated_purchased_upgrades = [upgrade_id | socket.assigns.purchased_upgrades]
 
         # Update the planets list and upgrade state
-        send(self(), :updateDisplayOnClick)
+        send(self(), :update_display_on_click)
 
         socket
         |> assign(:available_upgrades, updated_available_upgrades)
@@ -569,7 +569,7 @@ defmodule SpaceCapitalismWeb.GameLive do
     case action_result do
       {:ok, message} ->
         final_message = success_message_override || message
-        send(self(), :updateDisplayOnClick)
+        send(self(), :update_display_on_click)
         {:noreply, put_flash(socket, :info, final_message)}
 
       {:error, reason} ->
