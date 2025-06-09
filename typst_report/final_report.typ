@@ -75,19 +75,29 @@ Ce n'est pas vraiment un problème pour nous car nous avons utilisé Phoenix Fra
 
 == Expérience avec le paradigme de concurrence
 
+Ce qui est impressionnant avec Elixir, c'est qu'on oublie presque qu'on utilise le paradigme de concurrence. Dans notre application, tout passe par messages, et l'endroit clé de la concurrence est le compteur global des ressources de l'utilisateur. En utilisant l'architecture idiomatique d'Elixir avec les patterns Acteur/Agent, il n'y a presque aucun moyen d'avoir des problèmes de concurrence. 
 
+Tous les problèmes de sections critiques partagées et de ressources qui peuvent être modifiées par plusieurs processus à la fois ne constituent plus un problème, car tout se fait de façon séquentielle dans la boîte aux lettres du processus, éliminant ainsi les conditions de course.
 
 === Avantages observés dans la pratique
 
+
+
 === Défis rencontrés et solutions adoptées
 
+Ce qui reste complexe est l'adoption du modèle de conception. On ne peut pas écrire cette application comme on l'aurait écrite en Java ou en C++. Devoir communiquer entre processus en utilisant des messages est un peu complexe au début, mais on s'y habitue rapidement. 
+
+Il y a aussi un défi avec l'intégration IDE. Dès qu'on commence à créer nos propres modules et à devoir les utiliser, les IDEs n'ont pas l'air d'apprécier parfaitement Elixir. Il est quasi impossible d'avoir une vue claire de la structure de nos modules...
+
 === Comparaison avec d'autres paradigmes de concurrence
+
+De tous les langages utilisant le paradigme de concurrence, Elixir est sûrement le plus simple à utiliser.
 
 == Retour sur le langage Elixir
 
 === Courbe d'apprentissage et adaptation
 
-Le langage 
+Le langage ressemble quelque peu à Haskell par sa programmation fonctionnelle. La logique reste similaire mais la syntaxe diffère.
 
 === Points forts du langage découverts
 
@@ -98,6 +108,12 @@ Le langage
 == Expérience avec Phoenix Framework
 
 === Facilité de développement web
+
+L'utilisation du framework Phoenix était très agréable. Une fois qu'on arrive à dépasser la structure quelque peu originale du framework (notamment le routing et la manière de l'utiliser qui est un peu déroutante au premier abord), l'utilisation de Phoenix se fait sans accrocs. 
+
+Tout y est très facilité : la communication temps réel via LiveView pour les mises à jour de l'interface utilisateur, l'utilisation des différents modules, etc. On n'a pas vraiment l'impression de travailler séparément sur un frontend et un backend, mais directement dans une application full stack. De plus, le hot reloading est un vrai atout, on peut tout changer dans notre code et l'application reste très réactive, elle rebuild aussi très rapidement. 
+
+Rien à redire.
 
 === Performance et réactivité
 
