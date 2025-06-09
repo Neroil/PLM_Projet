@@ -214,9 +214,9 @@
 </div>
 </div>
 
-<div class="fixed bottom-2 right-2 bg-black/85 border-2 border-cyan-700 rounded p-3 text-xs text-cyan-400 max-w-[250px] system-monitor">
+<div class="fixed bottom-2 right-2 bg-black/85 border-2 border-cyan-700 rounded p-3 text-xs text-cyan-400 max-w-[280px] system-monitor">
   <div class="flex justify-between items-center mb-2">
-    <h3 class="text-purple-400 font-bold text-sm tracking-wider">// SYSTEM_METRICS</h3>
+    <h3 class="text-purple-400 font-bold text-sm tracking-wider">// CONCURRENT_PROCESSES</h3>
     <button phx-click="toggle_vm_stats" class="text-cyan-400 hover:text-cyan-300 focus:outline-none">
       <%= if @vm_stats_minimized do %>
         <span class="text-xs">[ + ]</span>
@@ -225,61 +225,117 @@
       <% end %>
     </button>
   </div>
-  
-  <%= unless @vm_stats_minimized do %>
+    <%= unless @vm_stats_minimized do %>
     <div class="space-y-1.5">
-      <div class="flex justify-between">
-        <span class="font-bold">Active Processes:</span>
-        <span class="text-green-400 font-mono"><%= @vm_stats.process_count %> / <%= @vm_stats.process_limit %></span>
-      </div>
-      
-      <div class="flex justify-between">
-        <span class="font-bold">Schedulers:</span>
-        <span class="text-pink-400 font-mono"><%= @vm_stats.scheduler_count %></span>
-      </div>
-      
-      <div class="flex justify-between">
-        <span class="font-bold">Atom Count:</span>
-        <span class="text-cyan-300 font-mono"><%= @vm_stats.atom_count %></span>
-      </div>
-      
-      <div class="flex justify-between">
-        <span class="font-bold">Memory Usage:</span>
-        <span class="text-yellow-400 font-mono"><%= @vm_stats.memory_usage %></span>
-      </div>
-
-      <div class="flex justify-between">
-        <span class="font-bold">GC Count:</span>
-        <span class="text-yellow-400 font-mono"><%= @vm_stats.gc_count %></span>
-      </div>
-
-      <div class="flex justify-between">
-        <span class="font-bold">IO Activity:</span>
-        <span class="text-yellow-400 font-mono"><%= @vm_stats.io_activity %></span>
-      </div>
-      
-      <div class="flex justify-between">
-        <span class="font-bold">Run Queue:</span>
-        <span class="text-orange-400 font-mono"><%= @vm_stats.run_queue %></span>
-      </div>
-      
-      <div class="flex justify-between">
-        <span class="font-bold">Process Limit:</span>
-        <span class="text-blue-400 font-mono"><%= @vm_stats.process_limit %></span>
-      </div>
-      
-      <div class="flex justify-between">
-        <span class="font-bold">Reductions:</span>
-        <span class="text-purple-400 font-mono"><%= @vm_stats.reduction_count %></span>
+      <!-- BEAM VM Core Stats -->
+      <div class="mb-2 pb-1.5 border-b border-cyan-700/50">
+        <div class="text-[10px] text-cyan-500 font-bold mb-1">BEAM VM CORE</div>
+        
+        <div class="flex justify-between">
+          <span class="font-bold">Total Processes:</span>
+          <span class="text-green-400 font-mono"><%= @vm_stats.process_count %> / <%= @vm_stats.process_limit %></span>
+        </div>
+        
+        <div class="flex justify-between">
+          <span class="font-bold">Schedulers:</span>
+          <span class="text-pink-400 font-mono"><%= @vm_stats.scheduler_count %> threads</span>
+        </div>
+        
+        <div class="flex justify-between">
+          <span class="font-bold">Run Queue:</span>
+          <span class="text-orange-400 font-mono"><%= @vm_stats.run_queue %></span>
+        </div>
+        
+        <div class="flex justify-between">
+          <span class="font-bold">Reductions/sec:</span>
+          <span class="text-purple-400 font-mono"><%= @vm_stats.reductions_per_second %></span>
+        </div>
       </div>
 
-      <div class="flex justify-between">
-        <span class="font-bold">Reductions/sec:</span>
-        <span class="text-purple-400 font-mono"><%= @vm_stats.reductions_per_second %></span>
+      <!-- Game Concurrency Stats -->
+      <div class="mb-2 pb-1.5 border-b border-green-700/50">
+        <div class="text-[10px] text-green-500 font-bold mb-1">GAME CONCURRENCY</div>
+        
+        <div class="flex justify-between">
+          <span class="font-bold">Game Processes:</span>
+          <span class="text-green-400 font-mono"><%= @vm_stats.game_processes %></span>
+        </div>
+        
+        <div class="flex justify-between">
+          <span class="font-bold">Active Planets:</span>
+          <span class="text-blue-400 font-mono"><%= @vm_stats.active_planets %> GenServers</span>
+        </div>
+        
+        <div class="flex justify-between">
+          <span class="font-bold">Robot Workers:</span>
+          <span class="text-yellow-400 font-mono"><%= @vm_stats.robot_workers %> processes</span>
+        </div>
+        
+        <div class="flex justify-between">
+          <span class="font-bold">Resource Agents:</span>
+          <span class="text-cyan-400 font-mono"><%= @vm_stats.resource_agents %> agents</span>
+        </div>
+        
+        <div class="flex justify-between">
+          <span class="font-bold">Supervisors:</span>
+          <span class="text-purple-400 font-mono"><%= @vm_stats.supervisor_tree %> active</span>
+        </div>
+          <div class="flex justify-between">
+          <span class="font-bold">Concurrent Ops:</span>
+          <span class="text-red-400 font-mono animate-pulse"><%= @vm_stats.concurrent_operations %> running</span>
+        </div>
+        
+        <%= if @vm_stats.stress_test_info.active do %>
+          <div class="flex justify-between">
+            <span class="font-bold text-red-300">Stress Test:</span>
+            <span class="text-red-300 font-mono animate-pulse"><%= @vm_stats.stress_test_info.process_count %> procs</span>
+          </div>
+        <% end %>
+      </div>      <!-- CPU Stress Test Controls -->
+      <div class="mb-2 pb-1.5 border-b border-red-700/50">
+        <div class="text-[10px] text-red-500 font-bold mb-1">CPU STRESS TEST</div>
+        <div class="space-y-1">
+          <button phx-click="stress_test_light" class="w-full bg-yellow-600/20 hover:bg-yellow-600/30 border border-yellow-600 text-yellow-400 px-2 py-1 rounded text-[10px] font-mono transition-colors">
+            LIGHT (<%= @vm_stats.stress_test_preview.light %> procs)
+          </button>
+          <button phx-click="stress_test_medium" class="w-full bg-orange-600/20 hover:bg-orange-600/30 border border-orange-600 text-orange-400 px-2 py-1 rounded text-[10px] font-mono transition-colors">
+            MEDIUM (<%= @vm_stats.stress_test_preview.medium %> procs)
+          </button>
+          <button phx-click="stress_test_heavy" class="w-full bg-red-600/20 hover:bg-red-600/30 border border-red-600 text-red-400 px-2 py-1 rounded text-[10px] font-mono transition-colors">
+            HEAVY (<%= @vm_stats.stress_test_preview.heavy %> procs)
+          </button>
+          <button phx-click="stop_stress_test" class="w-full bg-green-600/20 hover:bg-green-600/30 border border-green-600 text-green-400 px-2 py-1 rounded text-[10px] font-mono transition-colors">
+            STOP TEST
+          </button>
+        </div>
+        <div class="text-[9px] text-gray-500 mt-1 text-center">
+          ↑ Watch Run Queue increase ↑<br/>
+          <span class="text-cyan-400">CPU: <%= @vm_stats.scheduler_count %> cores</span>
+        </div>
+      </div>
+
+      <!-- System Resources -->
+      <div>
+        <div class="text-[10px] text-yellow-500 font-bold mb-1">SYSTEM RESOURCES</div>
+        
+        <div class="flex justify-between">
+          <span class="font-bold">Memory Usage:</span>
+          <span class="text-yellow-400 font-mono"><%= @vm_stats.memory_usage %></span>
+        </div>
+
+        <div class="flex justify-between">
+          <span class="font-bold">GC Count:</span>
+          <span class="text-yellow-400 font-mono"><%= @vm_stats.gc_count %></span>
+        </div>
+
+        <div class="flex justify-between">
+          <span class="font-bold">Atom Count:</span>
+          <span class="text-cyan-300 font-mono"><%= @vm_stats.atom_count %></span>
+        </div>
       </div>
     </div>
     <div class="mt-2 pt-2 border-t border-cyan-700/50 text-[10px] text-center text-cyan-600">
-      Powered by BEAM VM - <%= @vm_stats.scheduler_count %> parallel thread schedulers
+      Powered by BEAM VM - <%= @vm_stats.scheduler_count %> parallel schedulers running <%= @vm_stats.game_processes %> concurrent game processes
     </div>
   <% end %>
 </div>

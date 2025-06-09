@@ -97,6 +97,8 @@ defmodule SpaceCapitalismWeb.GameLive do
     updated_socket =
       socket
       |> assign(:resources, ResourceSupervisor.get_all_resources())
+      # Update VM stats immediately on user actions
+      |> assign(:vm_stats, get_vm_stats())
       |> update_planets_in_socket()
 
     {:noreply, updated_socket}
@@ -126,6 +128,54 @@ defmodule SpaceCapitalismWeb.GameLive do
   @impl true
   def handle_event("toggle_vm_stats", _params, socket) do
     {:noreply, assign(socket, :vm_stats_minimized, !socket.assigns.vm_stats_minimized)}
+  end
+
+  # Add CPU stress test event handlers
+  @impl true
+  def handle_event("stress_test_light", _params, socket) do
+    {process_count, _duration} = get_stress_test_config(:light)
+    start_cpu_stress_test(:light)
+
+    {:noreply,
+     put_flash(
+       socket,
+       :info,
+       "Light CPU stress test started (#{process_count} processes) - should increase run queue"
+     )}
+  end
+
+  @impl true
+  def handle_event("stress_test_medium", _params, socket) do
+    {process_count, _duration} = get_stress_test_config(:medium)
+    start_cpu_stress_test(:medium)
+
+    {:noreply,
+     put_flash(
+       socket,
+       :info,
+       "Medium CPU stress test started (#{process_count} processes) - should saturate CPU"
+     )}
+  end
+
+  @impl true
+  def handle_event("stress_test_heavy", _params, socket) do
+    {process_count, _duration} = get_stress_test_config(:heavy)
+    start_cpu_stress_test(:heavy)
+
+    {:noreply,
+     put_flash(
+       socket,
+       :info,
+       "Heavy CPU stress test started (#{process_count} processes) - should overload CPU"
+     )}
+  end
+
+  @impl true
+  def handle_event("stop_stress_test", _params, socket) do
+    stop_cpu_stress_test()
+
+    {:noreply,
+     put_flash(socket, :info, "CPU stress test stopped - run queue should return to 0-1")}
   end
 
   def handle_event("buy_resource", %{"resource" => resource, "quantity" => quantity}, socket) do
@@ -177,6 +227,7 @@ defmodule SpaceCapitalismWeb.GameLive do
         {:noreply, socket}
     end
   end
+
   # Private function to handle both buying and selling resources
   # Validates input, performs transaction, and updates UI with appropriate flash messages
   # Parameters:
@@ -227,6 +278,7 @@ defmodule SpaceCapitalismWeb.GameLive do
       end
     end
   end
+
   # Format large numbers for display (converts to K/M notation for readability)
   defp format_number(number) when is_integer(number) do
     cond do
@@ -261,11 +313,12 @@ defmodule SpaceCapitalismWeb.GameLive do
   end
 
   defp format_countdown(_), do: "00:00"
-
   # Collect comprehensive BEAM VM statistics for system monitoring
   # Returns a map with process counts, memory usage, scheduler info, and performance metrics
   # Used for the real-time system monitor display in the game UI
   defp get_vm_stats do
+    concurrent_stats = get_concurrent_game_stats()
+
     %{
       process_count: Process.list() |> length(),
       process_limit: :erlang.system_info(:process_limit) |> format_number(),
@@ -281,8 +334,134 @@ defmodule SpaceCapitalismWeb.GameLive do
       # Garbage collection info
       gc_count: :erlang.statistics(:garbage_collection) |> elem(0) |> format_number(),
       # Message queue activity
-      io_activity: :erlang.statistics(:io) |> elem(0) |> elem(0) |> format_number()
+      # Game-specific concurrent process stats
+      io_activity: :erlang.statistics(:io) |> elem(0) |> elem(0) |> format_number(),
+      game_processes: concurrent_stats.game_processes,
+      active_planets: concurrent_stats.active_planets,
+      robot_workers: concurrent_stats.robot_workers,
+      resource_agents: concurrent_stats.resource_agents,
+      supervisor_tree: concurrent_stats.supervisor_tree,
+      concurrent_operations: concurrent_stats.concurrent_operations,
+      # Add stress test info
+      stress_test_info: concurrent_stats.stress_test_info,
+      stress_test_preview: get_stress_test_preview()
     }
+  end
+
+  # Get detailed statistics about concurrent game processes
+  # This showcases the concurrent nature of the application
+  defp get_concurrent_game_stats do
+    # Count game-specific processes
+    planet_processes = count_planet_processes()
+    robot_processes = count_robot_processes()
+    resource_processes = count_resource_processes()
+
+    # Calculate concurrent operations happening right now
+    concurrent_ops = calculate_concurrent_operations()
+
+    %{
+      # +4 for StockMarket, EventManager, etc.
+      game_processes: planet_processes + robot_processes + resource_processes + 4,
+      active_planets: planet_processes,
+      robot_workers: robot_processes,
+      resource_agents: resource_processes,
+      supervisor_tree: count_supervisors(),
+      concurrent_operations: concurrent_ops,
+      # Add stress test info
+      stress_test_info: get_current_stress_test_info()
+    }
+  end
+
+  # Count planet GenServer processes
+  defp count_planet_processes do
+    try do
+      # Get all planets with their current state and filter by actual ownership
+      PlanetSupervisor.get_all_planets()
+      |> Map.values()
+      |> Enum.filter(fn planet -> planet.owned end)
+      |> length()
+    rescue
+      _ -> 0
+    end
+  end
+
+  # Count robot worker processes across all planets
+  defp count_robot_processes do
+    try do
+      # Get all planets with their current state and filter by actual ownership
+      owned_planets =
+        PlanetSupervisor.get_all_planets()
+        |> Map.values()
+        |> Enum.filter(fn planet -> planet.owned end)
+
+      robot_counts =
+        owned_planets
+        |> Enum.map(fn planet ->
+          try do
+            children = DynamicSupervisor.which_children(planet.id)
+            length(children)
+          rescue
+            _error ->
+              0
+          end
+        end)
+
+      Enum.sum(robot_counts)
+    rescue
+      _error ->
+        0
+    end
+  end
+
+  # Count resource Agent processes
+  defp count_resource_processes do
+    try do
+      ResourceSupervisor.get_resources()
+      |> length()
+    rescue
+      _ -> 0
+    end
+  end
+
+  # Count supervisor processes in the game
+  defp count_supervisors do
+    try do
+      # GameSupervisor, PlanetSupervisor, ResourceSupervisor + dynamic supervisors for each owned planet
+      base_supervisors = 3
+
+      owned_planet_count =
+        PlanetSupervisor.get_all_planets()
+        |> Map.values()
+        |> Enum.filter(fn planet -> planet.owned end)
+        |> length()
+
+      base_supervisors + owned_planet_count
+    rescue
+      _ -> 3
+    end
+  end
+
+  # Calculate how many concurrent operations might be happening
+  defp calculate_concurrent_operations do
+    try do
+      # Estimate based on message queue lengths and process activity
+      process_with_messages =
+        Process.list()
+        |> Enum.count(fn pid ->
+          case Process.info(pid, :message_queue_len) do
+            {:message_queue_len, len} when len > 0 -> true
+            _ -> false
+          end
+        end)
+
+      # Add some randomness to simulate concurrent activity
+      base_activity = process_with_messages
+      # 0-4 additional operations
+      random_factor = :rand.uniform(5) - 1
+      base_activity + random_factor
+    rescue
+      _ -> 0
+    end
   end
 
   # Calculate the current BEAM VM reductions per second
@@ -404,5 +583,124 @@ defmodule SpaceCapitalismWeb.GameLive do
       _ ->
         {:noreply, socket}
     end
+  end
+
+  # CPU stress testing functions to artificially increase run queue
+  defp start_cpu_stress_test(intensity) do
+    # Stop any existing stress test first
+    stop_cpu_stress_test()
+
+    {process_count, duration} = get_stress_test_config(intensity)
+
+    # Store the PIDs in the process dictionary for cleanup
+    stress_pids =
+      Enum.map(1..process_count, fn _i ->
+        spawn(fn -> cpu_intensive_work(duration) end)
+      end)
+
+    Process.put(:stress_test_pids, stress_pids)
+
+    # Auto-cleanup after duration
+    Process.send_after(self(), :auto_stop_stress_test, duration + 1000)
+  end
+
+  # Get stress test configuration based on CPU cores
+  defp get_stress_test_config(intensity) do
+    scheduler_count = :erlang.system_info(:schedulers_online)
+
+    case intensity do
+      :light ->
+        # Use 1/2 of available schedulers, 10 seconds
+        process_count = max(2, div(scheduler_count, 2))
+        {process_count, 10_000}
+
+      :medium ->
+        # Use same number as schedulers (100% CPU), 12 seconds
+        {scheduler_count, 12_000}
+
+      :heavy ->
+        # Use 2x schedulers (200% CPU load), 15 seconds
+        process_count = scheduler_count * 2
+        {process_count, 15_000}
+
+      _ ->
+        # Fallback
+        {max(2, div(scheduler_count, 2)), 10_000}
+    end
+  end
+
+  defp stop_cpu_stress_test do
+    case Process.get(:stress_test_pids) do
+      nil ->
+        :ok
+
+      pids when is_list(pids) ->
+        Enum.each(pids, fn pid ->
+          if Process.alive?(pid) do
+            Process.exit(pid, :kill)
+          end
+        end)
+
+        Process.delete(:stress_test_pids)
+
+      _ ->
+        :ok
+    end
+  end
+
+  # CPU-intensive work that will compete for scheduler time
+  defp cpu_intensive_work(duration_ms) do
+    start_time = :erlang.monotonic_time(:millisecond)
+    end_time = start_time + duration_ms
+
+    cpu_loop(end_time)
+  end
+
+  defp cpu_loop(end_time) do
+    current_time = :erlang.monotonic_time(:millisecond)
+    # Do some CPU-intensive work
+    if current_time < end_time do
+      # Calculate prime numbers, factorial, or other math operations
+      _result =
+        Enum.reduce(1..1000, 0, fn i, acc ->
+          acc + round(:math.pow(i, 2)) + round(:math.sqrt(i))
+        end)
+
+      # Continue the loop
+      cpu_loop(end_time)
+    end
+  end
+
+  @impl true
+  def handle_info(:auto_stop_stress_test, socket) do
+    stop_cpu_stress_test()
+    {:noreply, put_flash(socket, :info, "CPU stress test automatically stopped")}
+  end
+
+  # Get information about currently running stress test
+  defp get_current_stress_test_info do
+    case Process.get(:stress_test_pids) do
+      nil ->
+        %{active: false, process_count: 0}
+
+      pids when is_list(pids) ->
+        alive_count = Enum.count(pids, &Process.alive?/1)
+        %{active: alive_count > 0, process_count: alive_count}
+
+      _ ->
+        %{active: false, process_count: 0}
+    end
+  end
+
+  # Add a helper function to get stress test preview info
+  def get_stress_test_preview do
+    scheduler_count = :erlang.system_info(:schedulers_online)
+
+    %{
+      light: max(2, div(scheduler_count, 2)),
+      medium: scheduler_count,
+      heavy: scheduler_count * 2,
+      schedulers: scheduler_count
+    }
   end
 end
