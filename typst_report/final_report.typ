@@ -21,9 +21,50 @@ Ensuite nous avons la partie *View* avec le template `game_live.html.heex` qui d
 
 === Organisation des modules Elixir
 
-=== Gestion des processus et de la concurrence
+Tous les modules pour le backend que nous avons créé pour ce projet ce retrouve dans la dossier `lib>space_capitalism>components`. Tous ces modules sont soient des `Agent`, des `GenServer`, des `Supervisor` ou des `DynamicSupervisor`. Pour rappel, ce sont des comportements fournis par OTP. Les `Agent` et `GenServer` permettent de garder un état interne et de transmettre des messages. Les `Supervisor` et `DynamicSupervisor` permettent de démarrer ou de stopper des autres processus et de les redémarrer en cas d'arrêt non prévu.
+
+Dans notre backend, nous avons quatre `Supervisor`/`DynamicSupervisor` qui sont:
+- GameSupervisor
+- PlanetSupervisor
+- ResourceSupervisor
+- RobotDynSupervisor
+
+Le reste des modules sont des `Agent`/`GenServer`:
+- EventManager
+- Planet
+- Resource
+- Robot
+- StockMarket
+
+En plus de cela, se trouve le module `UpdateManager` qui sert à regrouper les fonctions concernants les améliorations mais qui n'a pas un comportement spécific.
 
 == Implémentation du paradigme de concurrence
+
+=== Arbre de supervision
+Afin d'organiser nos processus, nous avons utiliser le principe d'arbre de supervision mis en place par OTP. À la racine de cet arbre ce trouve le module `GameSupervisor` qui a pour unique but de démarer les autres superviseurs et les serveurs qui ne dépendent pas d'un autre superviseur. La stratégie utilisée par tous les superviseurs est `one_for_one` qui permet de redémarrer uniquement le processus qui s'est arrêté.
+
+```ex
+def init(_) do
+    children = [
+      ResourceSupervisor,
+      PlanetSupervisor,
+      StockMarket,
+      EventManager
+    ]
+
+    Supervisor.init(children, strategy: :one_for_one)
+  end
+```
+
+Ensuite, le `ResourceSupervisor` va démarre un `Agent` `Resource` pour chacune des ressources du jeu et `PlanetSupervisor`va démarre un `GenServer` `Planet` par planète disponible dans le jeu. Quand une planète est démarrée, elle lance également un `RobotDynSupervisor` qui a pour but de gérer les robots de la planète qui l'a démarrer. Le `RobotDynSupervisor` ne démarre pas d'autre processus en même temps que lui, mais pourra démarrer ou stopper les `GenServer` `Robot` quand nécessaire.
+
+#figure(
+  image("media/supervision_tree.png"),
+  caption: [
+    Arbre de supervision
+  ],
+)
+
 
 === Utilisation des GenServers
 
@@ -37,16 +78,16 @@ De plus, l'utilisation de LiveView était très intéressante dans le projet. Ph
 
 *Communication asynchrone temps réel :*
 
-Ici, on a mis en place un système de mise à jour des informations liées à l'interface directement dans notre LiveView. Toutes les 200ms, un timer envoie un message `:updateDisplay` au processus LiveView (référencé par `self()`), qui déclenche l'exécution de la fonction `handle_info/2` correspondante. 
+Ici, on a mis en place un système de mise à jour des informations liées à l'interface directement dans notre LiveView. Toutes les 200ms, un timer envoie un message `:update_display` au processus LiveView (référencé par `self()`), qui déclenche l'exécution de la fonction `handle_info/2` correspondante. 
 
 *Flow d'execution d'un processus Live View*
 
 ```elixir
-:timer.send_interval(200, self(), :updateDisplay)
+:timer.send_interval(200, self(), :update_display)
 # ↓ Toutes les 200ms
-# Message {:updateDisplay} → Mailbox du processus LiveView
+# Message {:update_display} → Mailbox du processus LiveView
 # ↓ Traitement asynchrone
-def handle_info(:updateDisplay, socket) do
+def handle_info(:update_display, socket) do
   # Mise à jour des données
 end
 ```
