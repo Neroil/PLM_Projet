@@ -13,11 +13,11 @@ defmodule SpaceCapitalism.Application do
       {Phoenix.PubSub, name: SpaceCapitalism.PubSub},
       # Start the Finch HTTP client for sending emails
       {Finch, name: SpaceCapitalism.Finch},
-      # Start a worker by calling: SpaceCapitalism.Worker.start_link(arg)
-      # {SpaceCapitalism.Worker, arg},
+
       # Start to serve requests, typically the last entry
       SpaceCapitalismWeb.Endpoint,
 
+      # Main Supervisor of the game
       GameSupervisor
     ]
 
