@@ -454,11 +454,6 @@ defmodule SpaceCapitalismWeb.GameLive do
           end
         end)
 
-      # Add some randomness to simulate concurrent activity
-      base_activity = process_with_messages
-      # 0-4 additional operations
-      random_factor = :rand.uniform(5) - 1
-      base_activity + random_factor
     rescue
       _ -> 0
     end
