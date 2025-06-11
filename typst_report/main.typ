@@ -37,6 +37,10 @@
   logo: image("media/logo.png"), //set the logo
 ) 
 
+// Reset page counter for outline pages (use roman numerals or no numbering)
+#set page(numbering: "i")
+#counter(page).update(1)
+
 #outline(
   title: text(size: 1.3em, weight: "bold", fill: rgb("#A63A8F"))[Table des matières],
   indent: auto,
@@ -44,6 +48,10 @@
 )
 
 #pagebreak()
+
+// Start main content with page numbering from 1
+#set page(numbering: "1")
+#counter(page).update(1)
 
 //#include "intermediary_report.typ"
 #include "final_report.typ"

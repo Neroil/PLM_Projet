@@ -114,15 +114,20 @@ Pour afficher des informations du backend vers le frontend de façon complèteme
 
 === Configuration de l'application Phoenix
 
+Pour lancer l'application Phoenix, il faut en premier lieu installer Elixir (version 1.14 ou supérieure) et Phoenix Framework sur votre machine, tuto ici : https://hexdocs.pm/phoenix/installation.html. Ensuite, les étapes pour démarrer l'application sont simples :
 
+1. Se placer dans le dossier `space_capitalism`
+2. Installer les dépendances avec `mix deps.get`
+3. Compiler les dépendances avec `mix deps.compile`
+4. Lancer le serveur avec `mix phx.server`
+
+L'application devient alors accessible sur `http://localhost:4000`. Phoenix se charge automatiquement de compiler les assets et de démarrer tous les processus nécessaires grâce à la configuration OTP de notre application.
 
 === Déploiement et scalabilité
 
 Pour le moment, l'application n'est pas déployée. La raison principale de ce manque de déploiement réside dans la façon dont nous avons développé l'application. En effet, il n'y a pas de mécanisme de sessions mis en place et toute personne se connectant sur le serveur aura accès à la même partie en cours.
 
 Ce n'est pas vraiment un problème pour nous car nous avons utilisé Phoenix Framework pour sa popularité et sa gestion graphique, non pour ses capacités web multi-utilisateurs avec les websockets. L'objectif était d'explorer le paradigme de concurrence d'Elixir dans un contexte applicatif complet plutôt que de créer une véritable application web distribuée.
-
-#pagebreak()
 
 = Retour d'Expérience
 
@@ -144,23 +149,57 @@ Il y a aussi un défi avec l'intégration IDE. Dès qu'on commence à créer nos
 
 === Comparaison avec d'autres paradigmes de concurrence
 
-De tous les langages utilisant le paradigme de concurrence, Elixir est sûrement le plus simple à utiliser.
+De tous les langages utilisant le paradigme de concurrence, Elixir est sûrement le plus simple à utiliser. Si on compare avec ce qu'on a pu utiliser, c'est-à-dire des librairies pour la concurrence en C++ (mutex, sémaphores, etc.) ou les channels en Go, la différence est grande !
+
+Avec C++, il faut constamment gérer les verrous, s'assurer qu'on n'a pas de deadlocks, et la moindre erreur peut planter l'application entière et debugger ces problèmes est horrible. Avec Go, bien que les channels soient élégants, on doit encore réfléchir à la synchronisation et aux patterns de communication, devoir mettre en place une go routine qui gère les messages entrant de façon synchrone à la main...
+
+Avec Elixir, une fois qu'on passe outre la manière un peu originale d'organiser le code, la gestion de la concurrence devient presque transparente. Pas de verrous à gérer, pas de memory leaks possibles, et si un processus plante, les autres continuent tranquillement. C'est vraiment supérieur chez Elixir/Erlang.
 
 == Retour sur le langage Elixir
 
-=== Courbe d'apprentissage et adaptation
+=== Aspects fonctionnels et syntaxe
 
-Le langage ressemble quelque peu à Haskell par sa programmation fonctionnelle. La logique reste similaire mais la syntaxe diffère.
+Le langage ressemble quelque peu à Haskell/Scala par sa programmation fonctionnelle. La logique reste similaire mais la syntaxe diffère. Ce qui change le plus par rapport aux langages typés statiquement que nous connaissons (Java, C++, Go) est le fait qu'on utilise du typage dynamique, comme JavaScript et Python. Ce qui peut rendre l'écriture du code un peu difficile avec des erreurs de typage qui ne se font seulement à l'execution du code...
 
-=== Points forts du langage découverts
+L'immutabilité est omniprésente en Elixir. Toutes les structures de données sont immutables par défaut, ce qui élimine les problèmes de concurrence liés aux mutations partagées. Dans notre projet, cela se manifeste par des mises à jour d'état comme `%{state | robot_count: new_count}` qui créent de nouvelles structures plutôt que de modifier l'existante.
 
-=== Limitations rencontrées
+=== Pattern Matching 
 
-=== Écosystème et communauté
+Elixir étant un language fonctionnel, nous avons beaucoup utilisée le pattern matching. Plutôt que d'utiliser des if/else ou des switch, nous pouvons déstructurer directement les données, rendant le code vraiment plus simple à lire :
+
+```elixir
+case Resource.remove(:dG, total_cost) do
+  {:ok, remaining} -> # Transaction réussie
+  {:error, :insufficient_funds} -> # Pas assez d'argent
+end
+```
+
+=== Atoms et communication par messages
+
+Les atoms (`:iron`, `:dG`, `:nextEvent`) sont des sortes d'étiquettes uniques en Elixir qui remplacent les énumérations ou constantes d'autres langages. Ils servent d'identifiants rapides pour les messages entre processus et les types de ressources dans notre jeu. Comme Elixir ne stocke chaque atom qu'une seule fois en mémoire et les compare instantanément, ils sont parfaits pour la communication entre les différents processus du jeu.
+
+On les utilise massivement pour les messages pour ensuite les dirigers vers la fonction adéquate.
+
+=== Pipe Operator et lisibilité
+
+L'opérateur pipe `|>` transforme l'écriture du code en rendant les transformations de données naturelles à lire :
+
+```elixir
+socket
+|> assign(:resources, new_resources)
+|> put_flash(:info, message)
+|> then(&{:noreply, &1})
+```
+
+Cela évite l'imbrication excessive de fonctions qu'on retrouve dans d'autres langages fonctionnels.
+
+=== Défis d'adaptation
+
+L'adoption d'Elixir demande un changement de paradigme. On ne peut pas aborder les problèmes comme en Java ou C++. Il faut penser en termes de transformation de données et de flux de messages plutôt qu'en objets mutables.
+
+La syntaxe reste accessible, même si apprendre le language ne se fait pas en 10 minutes, c'était tout de même abordable !
 
 == Expérience avec Phoenix Framework
-
-=== Facilité de développement web
 
 L'utilisation du framework Phoenix était très agréable. Une fois qu'on arrive à dépasser la structure quelque peu originale du framework (notamment le routing et la manière de l'utiliser qui est un peu déroutante au premier abord), l'utilisation de Phoenix se fait sans accrocs. 
 
@@ -168,20 +207,20 @@ Tout y est très facilité : la communication temps réel via LiveView pour les 
 
 Rien à redire.
 
-=== Performance et réactivité
-
-=== Outils de développement et debugging
-
-=== Intégration avec l'écosystème Elixir/OTP
-
-#pagebreak()
-
 = Conclusion
 
-== Synthèse des apprentissages
+Ce projet nous a permis d'explorer en profondeur le paradigme de concurrence à travers Elixir et Phoenix, en développant un jeu simulant des communications entre des milliers de processus. Cette expérience a été particulièrement enrichissante car nous avons pu découvrir un langage conçu nativement pour la concurrence!
 
-== Pertinence du paradigme de concurrence pour ce type de projet
+== Apports du paradigme de concurrence
 
-== Perspectives d'amélioration et évolutions futures
+Elixir, avec son modèle Actor et son architecture OTP, démontre à quel point la concurrence peut être naturelle quand elle est intégrée au cœur du langage. Le fait que tout passe par messages élimine les problèmes classiques de synchronisation (sections critiques, conditions de course) qu'on retrouve dans d'autres langages comme C++. On oublie presque qu'on utilise la concurrence tellement c'est transparent.
 
-== Recommandations pour de futurs projets similaires 
+L'architecture avec les superviseurs offre également une grande tolérance aux pannes, permettant à chaque processus de redémarrer indépendamment sans affecter l'ensemble du système, même si dans notre projet, cette fonctionnalité n'a pas vraiment été utilisé.
+
+== Retour d'expérience
+
+L'expérience de développement avec Phoenix a été très positive. L'intégration entre le backend concurrent et l'interface utilisateur via LiveView crée une application fluide et réactive. Le développement full stack en Elixir offre une cohérence appréciable, même si l'adoption du modèle de conception orienté messages demande un certain temps d'adaptation.
+
+Les quelques défis rencontrés (courbe d'apprentissage, outils de développement) sont largement compensés par la simplicité et l'élégance du modèle de concurrence d'Elixir comparé à d'autres approches plus traditionnelles.
+
+Au final c'était un projet très intéressant et c'est avec plaisir que nous réutiliserons Elixir pour d'autres projets.
