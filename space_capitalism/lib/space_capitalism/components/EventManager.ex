@@ -227,7 +227,7 @@ defmodule EventManager do
       tax_amount = 1000 * :math.pow(2, planets_beyond_first)
 
       # Add the maintenance cost
-      tax_amount = tax_amount + Resource.get(:robot_maintenance_cost)
+      tax_amount = round(tax_amount + Resource.get(:robot_maintenance_cost))
 
       Resource.safe_remove(:dG, tax_amount)
 

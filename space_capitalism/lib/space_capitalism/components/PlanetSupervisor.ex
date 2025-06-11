@@ -64,9 +64,9 @@ defmodule PlanetSupervisor do
   Like `get_planets()` but return only the planets where `owned` is true
   """
   def get_all_owned_planets() do
-    Enum.filter(get_planets(), fn {_name, _cost, _resource_type, _base_cost, _base_production,
-                                  is_owned} ->
-      is_owned
+    Enum.filter(get_planets(), fn {name, _cost, _resource_type, _base_cost, _base_production,
+                                  _is_owned} ->
+      Planet.get_owned(name)
     end)
   end
 
