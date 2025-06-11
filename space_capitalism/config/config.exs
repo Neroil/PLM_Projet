@@ -13,6 +13,7 @@ config :space_capitalism,
 # Configures the endpoint
 config :space_capitalism, SpaceCapitalismWeb.Endpoint,
   url: [host: "localhost"],
+  check_origin: false,
   adapter: Bandit.PhoenixAdapter,
   render_errors: [
     formats: [html: SpaceCapitalismWeb.ErrorHTML, json: SpaceCapitalismWeb.ErrorJSON],

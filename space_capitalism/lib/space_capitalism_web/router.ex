@@ -28,10 +28,12 @@ defmodule SpaceCapitalismWeb.Router do
   end
 
 
-  # Other scopes may use custom stacks.
-  # scope "/api", SpaceCapitalismWeb do
-  #   pipe_through :api
-  # end
+  scope "/", SpaceCapitalismWeb do
+    pipe_through :browser
+
+    get "/", PageController, :home
+    live "/game", GameLive
+  end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:space_capitalism, :dev_routes) do
@@ -47,13 +49,6 @@ defmodule SpaceCapitalismWeb.Router do
 
       live_dashboard "/dashboard", metrics: SpaceCapitalismWeb.Telemetry
       forward "/mailbox", Plug.Swoosh.MailboxPreview
-    end
-
-    scope "/", SpaceCapitalismWeb do
-      pipe_through :browser
-
-      get "/", PageController, :home
-      live "/game", GameLive
     end
   end
 end
