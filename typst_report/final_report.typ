@@ -2,7 +2,7 @@
 
 == Introduction
 
-Notre projet, *Space capitalism*, est un jeu dans lequel le but est de gagner un maximum de doublons galactiques (\$dG), la monnaie du jeu. Pour cela, il est possible d'acheter des planètes ainsi que des robots qui vont pouvoir travailler sur ces planètes afin de récupérer des ressources comme du fer ou de l'or. Ensuite, il est possible de vendre ces ressources à la bourse pour gagner des \$dG! Mais attention, les prix de la bourse varient au cours du temps, en bien ou en mal. Cela permet de pouvoir spéculer sur la valeur des ressources ou bien d'investir dans l'une des cryptomonnaies pour essayer d'en tirer un bénéfice. Des événements aléatoires interviennent également au cours d'une partie. Ceux-ci peuvent affecter la bourse, la réserve d'argent du joueur ou les robots d'une planète.
+Notre projet, *Space capitalism*, est un jeu dans lequel le but est de gagner un maximum de doublons galactiques (\$dG), la monnaie du jeu. Pour cela, il est possible d'acheter des planètes ainsi que des robots qui vont pouvoir travailler sur ces planètes afin de récupérer des ressources comme du fer ou de l'or. Ensuite, il est possible de vendre ces ressources à la bourse pour gagner des \$dG! Mais attention, les prix de la bourse varient au cours du temps, en bien ou en mal. Cela permet de pouvoir spéculer sur la valeur des ressources ou bien d'investir dans l'une des cryptomonnaies pour essayer d'en tirer un bénéfice. Des événements aléatoires interviennent également au cours d'une partie. Ceux-ci peuvent affecter la bourse, la réserve d'argent du joueur ou les robots d'une planète. Il y a aussi la taxe intergalactique ainsi que le coût de maintenance des robots qui sont prélevés automatiquement de manière périodique. Enfin, une série d'améliorations sont possibles afin de booster la récolte de certaines ressources.
  
 
 == Architecture générale de l'application Phoenix
@@ -26,7 +26,7 @@ Ensuite nous avons la partie *View* avec le template `game_live.html.heex` qui d
 
 === Organisation des modules Elixir
 
-Tous les modules pour le backend que nous avons créé pour ce projet ce retrouve dans la dossier `lib>space_capitalism>components`. Tous ces modules sont soient des `Agent`, des `GenServer`, des `Supervisor` ou des `DynamicSupervisor`. Pour rappel, ce sont des comportements fournis par OTP. Les `Agent` et `GenServer` permettent de garder un état interne et de transmettre des messages. Les `Supervisor` et `DynamicSupervisor` permettent de démarrer ou de stopper des autres processus et de les redémarrer en cas d'arrêt non prévu.
+Tous les modules pour le backend que nous avons créé pour ce projet se retrouvent dans la dossier `lib>space_capitalism>components`. Tous ces modules sont des `Agent`, des `GenServer`, des `Supervisor` ou des `DynamicSupervisor`. Pour rappel, ce sont des comportements fournis par OTP. Les `Agent` et `GenServer` permettent de garder un état interne et d'envoyer / recevoir des messages. Les `Supervisor` et `DynamicSupervisor` permettent de démarrer ou de stopper des autres processus et de les redémarrer en cas d'arrêt non prévu.
 
 Dans notre backend, nous avons quatre `Supervisor`/`DynamicSupervisor` qui sont:
 - GameSupervisor
@@ -41,12 +41,12 @@ Le reste des modules sont des `Agent`/`GenServer`:
 - Robot
 - StockMarket
 
-En plus de cela, se trouve le module `UpdateManager` qui sert à regrouper les fonctions concernants les améliorations mais qui n'a pas un comportement spécific.
+En plus de cela, se trouve le module `UpdateManager` qui sert à regrouper les fonctions concernant les améliorations, mais qui n'a pas un comportement spécifique.
 
 == Implémentation du projet
 
 === Arbre de supervision
-Afin d'organiser nos processus, nous avons utiliser le principe d'arbre de supervision mis en place par OTP #footnote("https://www.erlang.org/doc/system/design_principles.html"). À la racine de cet arbre se trouve le module `GameSupervisor` qui a pour unique but de démarer les autres superviseurs et les serveurs qui ne dépendent pas d'un autre superviseur. La stratégie utilisée par tous les superviseurs est `one_for_one` qui permet de redémarrer uniquement le processus qui s'est arrêté.
+Afin d'organiser nos processus, nous avons utilisé le principe d'arbre de supervision mis en place par OTP #footnote("https://www.erlang.org/doc/system/design_principles.html"). À la racine de cet arbre se trouve le module `GameSupervisor` qui a pour unique but de démarer les autres superviseurs et les serveurs qui ne dépendent pas d'un autre superviseur. La stratégie utilisée par tous les superviseurs est `one_for_one` qui permet de redémarrer uniquement le processus qui s'est arrêté.
 
 ```ex
 def init(_) do
@@ -62,9 +62,9 @@ def init(_) do
   end
 ```
 
-Ensuite, le `ResourceSupervisor` va démarre un `Agent` `Resource` pour chacune des ressources du jeu et `PlanetSupervisor`va démarre un `GenServer` `Planet` par planète disponible dans le jeu. Quand une planète est démarrée, elle lance également un `RobotDynSupervisor` qui a pour but de gérer les robots de la planète qui l'a démarré. Le `RobotDynSupervisor` ne démarre pas d'autre processus en même temps que lui, mais pourra démarrer ou stopper les `GenServer` `Robot` quand nécessaire.
+Ensuite, le `ResourceSupervisor` va démarrer un `Agent` `Resource` pour chacune des ressources du jeu et `PlanetSupervisor`va démarrer un `GenServer` `Planet` par planète disponible dans le jeu. Quand une planète est démarrée, elle lance également un `RobotDynSupervisor` qui a pour but de gérer les robots de la planète qui l'a démarré. Le `RobotDynSupervisor` ne lance pas d'autres processus en même temps que lui, mais pourra démarrer ou stopper les `GenServer` `Robot` quand nécessaire.
 
-Grâce à ces superviseurs, on est assuré d'avoir nos processus toujours en vie comme les superviseurs redémarre leurs enfants automatiquement en cas d'arrêts. Organiser les superviseurs en arbre permet également de s'assurer que les superviseurs eux-même soient également surveiller par leur parent.
+Grâce à ces superviseurs, on est assuré d'avoir nos processus toujours en vie, comme les superviseurs redémarrent leurs enfants automatiquement en cas d'arrêts. Organiser les superviseurs en arbre permet de plus de s'assurer que les superviseurs eux-mêmes soient ainsi surveillés par leur parent.
 
 #figure(
   image("media/supervision_tree.png"),
@@ -106,7 +106,8 @@ Les ressources dans notre jeu sont simplement un nombre entier qui représente l
 Chaque ressource est démarée depuis le `ResourceSupervisor`, avec en paramètre la quantité que le joueur a en début de partie ainsi qu'un atome représentant le nom de la ressource.
 
 === Gestion des robots
-Chaque robot créé au cours de la partie est un processus. Ceux-ci ont pour unique but de lancer une boucle infinie où ils vont ajouter une certaine quantité de ressource à la réserve du joueur puis atteindre le prochain moment où ils vont répéter cette action. Leur comportement utilise les `GenServer` d'OTP. Ceux-ci sont similaires au `Agent` du fait qu'il gère un état interne, mais leur implémentation se font à l'aide de callback aux différents messages qu'ils peuvent recevoir et non avec les méthodes `get`, `update` ou `get_and_update`. Cela permet d'utiliser la fonction `Process.send_after` qui permet d'envoyer un message à un processus après une certaine durée d'attente.
+Chaque robot créé au cours de la partie est un processus. Ceux-ci ont pour unique but de lancer une boucle infinie où ils vont ajouter une certaine quantité de ressource à la réserve du joueur, puis atteindre le prochain moment où ils vont répéter cette action. Leur comportement utilise les `GenServer` d'OTP. Ceux-ci sont similaires au `Agent` du fait qu'il gère un état interne, mais leur implémentation se fait à l'aide de callback aux différents messages qu'ils peuvent recevoir et non avec les méthodes `get`, `update` ou `get_and_update`. Cela permet d'utiliser la fonction `Process.send_after` qui permet d'envoyer un message à un processus après une certaine durée d'attente.
+
 
 ```ex
 Process.send_after(self(), :work, state[:time])
@@ -126,9 +127,10 @@ Lors de l'initialisation du `GenServer` du robot, on appelle cette fonction qui 
 
 Le callback va effectuer l'action du robot, puis se rappeler de manière récursive en réutilisant la fonction `Process.send_after`.
 
-Les robots sont créés et supprimés depuis le `RobotDynSupervisor`. Ce superviseur permet de bien vérifier que les robots ne s'arrêtent pas et les redémarrer en cas de besoin. Pour les stopper, le superviseur dynamic va simplement appeler la fonction `terminate_child` qui permet d'arrêter volontairement un processus enfant. Quand le processus essaiera d'envoyer le message `:work` pour continuer la boucle de travail, comme le destinataire n'existe plus, le message sera ignoré et la boucle ainsi stoppée.
+Les robots sont créés et supprimés depuis le `RobotDynSupervisor`. Ce superviseur permet de bien vérifier que les robots ne s'arrêtent pas et de les redémarrer en cas de besoin. Pour les stopper, le superviseur dynamique va simplement appeler la fonction `terminate_child` qui permet d'arrêter volontairement un processus enfant. Quand le processus essaiera d'envoyer le message `:work` pour continuer la boucle de travail, comme le destinataire n'existe plus, le message sera ignoré et la boucle ainsi stoppée.
 
-En plus des superviseurs, il y a également une ressource robot qui permet de gérer facilement le nombre global de robot pour l'affichage dans l'interface du jeu.
+En plus des superviseurs, il y a également une ressource robot qui permet de gérer facilement le nombre global de robots pour l'affichage dans l'interface du jeu.
+
 
 === Gestion des autres GenServer
 
