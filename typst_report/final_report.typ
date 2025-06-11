@@ -1,5 +1,10 @@
 = Implémentation et Architecture Logicielle
 
+== Introduction
+
+Notre projet, *Space capitalism*, est un jeu dans lequel le but est de gagner un maximum de doublons galactiques (\$dG), la monnaie du jeu. Pour cela, il est possible d'acheter des planètes ainsi que des robots qui vont pouvoir travailler sur ces planètes afin de récupérer des ressources comme du fer ou de l'or. Ensuite, il est possible de vendre ces ressources à la bourse pour gagner des \$dG! Mais attention, les prix de la bourse varient au cours du temps, en bien ou en mal. Cela permet de pouvoir spéculer sur la valeur des ressources ou bien d'investir dans l'une des cryptomonnaies pour essayer d'en tirer un bénéfice. Des événements aléatoires interviennent également au cours d'une partie. Ceux-ci peuvent affecter la bourse, la réserve d'argent du joueur ou les robots d'une planète.
+ 
+
 == Architecture générale de l'application Phoenix
 
 Pour effectuer ce projet, nous avons choisi d'utiliser le framework Phoenix, qui permet de développer des applications web en utilisant le langage Elixir. Le choix de développer une application web s'est imposé car Phoenix représente le framework le plus populaire et mature de l'écosystème Elixir pour les interfaces graphiques. De plus, l'opportunité de créer une application full stack entièrement en Elixir était particulièrement attrayante pour explorer en profondeur le paradigme de concurrence dans notre contexte de jeu.
@@ -38,10 +43,10 @@ Le reste des modules sont des `Agent`/`GenServer`:
 
 En plus de cela, se trouve le module `UpdateManager` qui sert à regrouper les fonctions concernants les améliorations mais qui n'a pas un comportement spécific.
 
-== Implémentation du paradigme de concurrence
+== Implémentation du projet
 
 === Arbre de supervision
-Afin d'organiser nos processus, nous avons utiliser le principe d'arbre de supervision mis en place par OTP. À la racine de cet arbre ce trouve le module `GameSupervisor` qui a pour unique but de démarer les autres superviseurs et les serveurs qui ne dépendent pas d'un autre superviseur. La stratégie utilisée par tous les superviseurs est `one_for_one` qui permet de redémarrer uniquement le processus qui s'est arrêté.
+Afin d'organiser nos processus, nous avons utiliser le principe d'arbre de supervision mis en place par OTP #footnote("https://www.erlang.org/doc/system/design_principles.html"). À la racine de cet arbre ce trouve le module `GameSupervisor` qui a pour unique but de démarer les autres superviseurs et les serveurs qui ne dépendent pas d'un autre superviseur. La stratégie utilisée par tous les superviseurs est `one_for_one` qui permet de redémarrer uniquement le processus qui s'est arrêté.
 
 ```ex
 def init(_) do
@@ -56,7 +61,7 @@ def init(_) do
   end
 ```
 
-Ensuite, le `ResourceSupervisor` va démarre un `Agent` `Resource` pour chacune des ressources du jeu et `PlanetSupervisor`va démarre un `GenServer` `Planet` par planète disponible dans le jeu. Quand une planète est démarrée, elle lance également un `RobotDynSupervisor` qui a pour but de gérer les robots de la planète qui l'a démarrer. Le `RobotDynSupervisor` ne démarre pas d'autre processus en même temps que lui, mais pourra démarrer ou stopper les `GenServer` `Robot` quand nécessaire.
+Ensuite, le `ResourceSupervisor` va démarre un `Agent` `Resource` pour chacune des ressources du jeu et `PlanetSupervisor`va démarre un `GenServer` `Planet` par planète disponible dans le jeu. Quand une planète est démarrée, elle lance également un `RobotDynSupervisor` qui a pour but de gérer les robots de la planète qui l'a démarré. Le `RobotDynSupervisor` ne démarre pas d'autre processus en même temps que lui, mais pourra démarrer ou stopper les `GenServer` `Robot` quand nécessaire.
 
 #figure(
   image("media/supervision_tree.png"),
@@ -64,6 +69,13 @@ Ensuite, le `ResourceSupervisor` va démarre un `Agent` `Resource` pour chacune 
     Arbre de supervision
   ],
 )
+
+=== Gestion des ressources
+
+
+
+
+
 
 
 === Utilisation des GenServers
