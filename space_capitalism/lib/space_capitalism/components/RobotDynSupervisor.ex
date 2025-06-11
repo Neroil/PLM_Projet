@@ -54,6 +54,6 @@ defmodule RobotDynSupervisor do
       DynamicSupervisor.terminate_child(planet, pid)
     end
 
-    ResourceSupervisor.remove_worker(count)
+    ResourceSupervisor.remove_worker(length(children))
   end
 end
