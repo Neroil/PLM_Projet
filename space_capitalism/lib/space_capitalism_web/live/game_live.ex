@@ -116,6 +116,12 @@ defmodule SpaceCapitalismWeb.GameLive do
   end
 
   @impl true
+  def handle_info(:auto_stop_stress_test, socket) do
+    stop_cpu_stress_test()
+    {:noreply, put_flash(socket, :info, "CPU stress test automatically stopped")}
+  end
+
+  @impl true
   def handle_event("sell_form_change", %{"quantity" => quantity, "resource" => resource}, socket) do
     handle_form_change(quantity, resource, socket, "sell")
   end
@@ -445,14 +451,13 @@ defmodule SpaceCapitalismWeb.GameLive do
   defp calculate_concurrent_operations do
     try do
       # Estimate based on message queue lengths and process activity
-      process_with_messages =
-        Process.list()
-        |> Enum.count(fn pid ->
-          case Process.info(pid, :message_queue_len) do
-            {:message_queue_len, len} when len > 0 -> true
-            _ -> false
-          end
-        end)
+      Process.list()
+      |> Enum.count(fn pid ->
+        case Process.info(pid, :message_queue_len) do
+          {:message_queue_len, len} when len > 0 -> true
+          _ -> false
+        end
+      end)
 
     rescue
       _ -> 0
@@ -664,12 +669,6 @@ defmodule SpaceCapitalismWeb.GameLive do
       # Continue the loop
       cpu_loop(end_time)
     end
-  end
-
-  @impl true
-  def handle_info(:auto_stop_stress_test, socket) do
-    stop_cpu_stress_test()
-    {:noreply, put_flash(socket, :info, "CPU stress test automatically stopped")}
   end
 
   # Get information about currently running stress test
