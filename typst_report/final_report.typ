@@ -3,7 +3,13 @@
 == Introduction
 
 Notre projet, *Space capitalism*, est un jeu dans lequel le but est de gagner un maximum de doublons galactiques (\$dG), la monnaie du jeu. Pour cela, il est possible d'acheter des planètes ainsi que des robots qui vont pouvoir travailler sur ces planètes afin de récupérer des ressources comme du fer ou de l'or. Ensuite, il est possible de vendre ces ressources à la bourse pour gagner des \$dG! Mais attention, les prix de la bourse varient au cours du temps, en bien ou en mal. Cela permet de pouvoir spéculer sur la valeur des ressources ou bien d'investir dans l'une des cryptomonnaies pour essayer d'en tirer un bénéfice. Des événements aléatoires interviennent également au cours d'une partie. Ceux-ci peuvent affecter la bourse, la réserve d'argent du joueur ou les robots d'une planète. Il y a aussi la taxe intergalactique ainsi que le coût de maintenance des robots qui sont prélevés automatiquement de manière périodique. Enfin, une série d'améliorations sont possibles afin de booster la récolte de certaines ressources.
- 
+
+=== Utilisation d'LLMs
+
+Lors de la conception de ce projet et de ce rapport, des LLMs (Claude, Gemini) ont été utilisés.
+La partie frontend n'étant ni notre fort, ni le cœur de ce projet, nous avons décidé de les utiliser pour avoir une interface utilisateur agréable sans devoir perdre trop de temps, du temps crucial pour coder la partie métier de ce projet.
+
+Ensuite, ils nous ont aidés pour la reformulation et l'amélioration de certaines parties du rapport.
 
 == Architecture générale de l'application Phoenix
 
@@ -142,7 +148,7 @@ L'utilisation de LiveView était très intéressante dans le projet. Phoenix Liv
 
 *Communication asynchrone temps réel :*
 
-Ici, on a mis en place un système de mise à jour des informations liées à l'interface directement dans notre LiveView. Toutes les 200ms, un timer envoie un message `:update_display` au processus LiveView (référencé par `self()`), qui déclenche l'exécution de la fonction `handle_info/2` correspondante. 
+Ici, on a mis en place un système de mise à jour des informations liées à l'interface directement dans notre LiveView. Toutes les 200ms, un timer envoie un message `:update_display` au processus LiveView (référencé par `self()`), qui déclenche l'exécution de la fonction `handle_info/2` correspondante.
 
 *Flow d'execution d'un processus Live View*
 
@@ -178,13 +184,13 @@ Cette approche mono-utilisateur était adaptée à nos objectifs car nous avons 
 
 == Expérience avec le paradigme de concurrence
 
-Ce qui est impressionnant avec Elixir, c'est qu'on oublie presque qu'on utilise le paradigme de concurrence. Dans notre application, tout passe par messages, et l'endroit clé de la concurrence est le compteur global des ressources de l'utilisateur. En utilisant l'architecture idiomatique d'Elixir avec les patterns Acteur/Agent, il n'y a presque aucun moyen d'avoir des problèmes de concurrence. 
+Ce qui est impressionnant avec Elixir, c'est qu'on oublie presque qu'on utilise le paradigme de concurrence. Dans notre application, tout passe par messages, et l'endroit clé de la concurrence est le compteur global des ressources de l'utilisateur. En utilisant l'architecture idiomatique d'Elixir avec les patterns Acteur/Agent, il n'y a presque aucun moyen d'avoir des problèmes de concurrence.
 
 Tous les problèmes de sections critiques partagées et de ressources qui peuvent être modifiées par plusieurs processus à la fois ne constituent plus un problème, car tout se fait de façon séquentielle dans la boîte aux lettres du processus, éliminant ainsi les conditions de course.
 
 === Défis rencontrés et solutions adoptées
 
-Ce qui reste complexe est l'adoption du modèle de conception. On ne peut pas écrire cette application comme on l'aurait écrite en Java ou en C++. Devoir communiquer entre processus en utilisant des messages est un peu complexe au début, mais on s'y habitue rapidement. 
+Ce qui reste complexe est l'adoption du modèle de conception. On ne peut pas écrire cette application comme on l'aurait écrite en Java ou en C++. Devoir communiquer entre processus en utilisant des messages est un peu complexe au début, mais on s'y habitue rapidement.
 
 Il y a aussi un défi avec l'intégration IDE. Dès qu'on commence à créer nos propres modules et à devoir les utiliser, les IDEs n'ont pas l'air d'apprécier parfaitement Elixir. Il est quasi impossible d'avoir une vue claire de la structure de nos modules...
 
@@ -204,7 +210,7 @@ Le langage ressemble quelque peu à Haskell/Scala par sa programmation fonctionn
 
 L'immutabilité est omniprésente en Elixir. Toutes les structures de données sont immutables par défaut, ce qui élimine les problèmes de concurrence liés aux mutations partagées. Dans notre projet, cela se manifeste par des mises à jour d'état comme `%{state | robot_count: new_count}` qui créent de nouvelles structures plutôt que de modifier l'existante.
 
-=== Pattern Matching 
+=== Pattern Matching
 
 Elixir étant un langage fonctionnel, nous avons beaucoup utilisé le pattern matching. Plutôt que d'utiliser des if/else ou des switch, nous pouvons déstructurer directement les données, rendant le code vraiment plus simple à lire :
 
@@ -242,9 +248,9 @@ La syntaxe reste accessible, même si apprendre le langage ne se fait pas en 10 
 
 == Expérience avec Phoenix Framework
 
-L'utilisation du framework Phoenix était très agréable. Une fois qu'on arrive à dépasser la structure quelque peu originale du framework (notamment le routing et la manière de l'utiliser qui est un peu déroutante au premier abord), l'utilisation de Phoenix se fait sans accrocs. 
+L'utilisation du framework Phoenix était très agréable. Une fois qu'on arrive à dépasser la structure quelque peu originale du framework (notamment le routing et la manière de l'utiliser qui est un peu déroutante au premier abord), l'utilisation de Phoenix se fait sans accrocs.
 
-Tout y est très facilité : la communication temps réel via LiveView pour les mises à jour de l'interface utilisateur, l'utilisation des différents modules, etc. On n'a pas vraiment l'impression de travailler séparément sur un frontend et un backend, mais directement dans une application full stack. De plus, le hot reloading est un vrai atout, on peut tout changer dans notre code et l'application reste très réactive, elle se rebuild aussi très rapidement. 
+Tout y est très facilité : la communication temps réel via LiveView pour les mises à jour de l'interface utilisateur, l'utilisation des différents modules, etc. On n'a pas vraiment l'impression de travailler séparément sur un frontend et un backend, mais directement dans une application full stack. De plus, le hot reloading est un vrai atout, on peut tout changer dans notre code et l'application reste très réactive, elle se rebuild aussi très rapidement.
 
 Rien à redire.
 
