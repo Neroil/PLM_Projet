@@ -5,7 +5,7 @@
 Pour lancer notre application sans installer Elixir localement, il est possible de la démarrer avec Docker. Pour cela, il suffit de cloner le repo et de démarre docker compose:
 ```bash
 git clone https://github.com/Neroil/PLM_Projet.git
-cd space_capitalism
+cd .\\PLM_Projet\\space_capitalism\\
 docker compose up
 ```
 
@@ -24,8 +24,7 @@ git clone https://github.com/Neroil/PLM_Projet.git
 ```
 2. Naviguez vers le dossier `space_capitalism`
 ```bash
-cd space_capitalism
-docker compose up
+cd .\\PLM_Projet\\space_capitalism\\
 ```
 3. Installez et compilez les dépendances :
 ```bash
