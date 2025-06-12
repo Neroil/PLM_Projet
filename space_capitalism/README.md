@@ -1,18 +1,40 @@
-# SpaceCapitalism
+# PLM_Projet
 
-To start your Phoenix server:
+## Démarrer avec docker
 
-  * Run `mix setup` to install and setup dependencies
-  * Start Phoenix endpoint with `mix phx.server` or inside IEx with `iex -S mix phx.server`
+Pour lancer notre application sans installer Elixir localement, il est possible de la démarrer avec Docker. Pour cela, il suffit de cloner le repo et de démarre docker compose:
+```bash
+git clone https://github.com/Neroil/PLM_Projet.git
+cd .\\PLM_Projet\\space_capitalism\\
+docker compose up
+```
 
-Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+## Démarre avec Elixir
 
-Ready to run in production? Please [check our deployment guides](https://hexdocs.pm/phoenix/deployment.html).
+### Prérequis
 
-## Learn more
+- Elixir (version 1.14 ou supérieure) ([installer](https://elixir-lang.org/install.html))
+- Phoenix Framework ([installer](https://hexdocs.pm/phoenix/installation.html))
 
-  * Official website: https://www.phoenixframework.org/
-  * Guides: https://hexdocs.pm/phoenix/overview.html
-  * Docs: https://hexdocs.pm/phoenix
-  * Forum: https://elixirforum.com/c/phoenix-forum
-  * Source: https://github.com/phoenixframework/phoenix
+### Installation
+
+1. Clonez le repository
+```bash
+git clone https://github.com/Neroil/PLM_Projet.git
+```
+2. Naviguez vers le dossier `space_capitalism`
+```bash
+cd .\\PLM_Projet\\space_capitalism\\
+```
+3. Installez et compilez les dépendances :
+```bash
+mix deps.get
+mix deps.compile
+```
+4. Lancez le serveur :
+```bash
+mix phx.server
+```
+
+## Atteindre le site
+Une fois démarrée, l'application sera accessible sur [http://localhost:4000](http://localhost:4000)
